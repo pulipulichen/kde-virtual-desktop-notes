@@ -20,5 +20,9 @@
             <label>Per-desktop text and background colors as JSON</label>
             <default>{}</default>
         </entry>
+        <entry name="desktopIcons" type="String">
+            <label>Per-desktop emoji or KDE icons as JSON</label>
+            <default>{}</default>
+        </entry>
     </group>
 </kcfg>
