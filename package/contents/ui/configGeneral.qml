@@ -201,7 +201,7 @@ ColumnLayout {
     Controls.Label {
         Layout.fillWidth: true
         wrapMode: Text.WordWrap
-        text: qsTr("Desktops 1–8 automatically use eight distinct Material 3-inspired, high-contrast colors. Select a desktop to customize its foreground and background.")
+        text: qsTr("Choose from 16 high-contrast Material 3-inspired color pairs. Each of desktops 1–16 gets a different automatic color; desktop 8 defaults to green. Customize foreground and background per desktop.")
     }
 
     Rectangle {
