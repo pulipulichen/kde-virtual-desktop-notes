@@ -1,5 +1,5 @@
 import QtQuick 2.15
-import QtQuick.Controls 2.15 as Controls
+import org.kde.plasma.components 3.0 as PlasmaComponents3
 import QtQuick.Layouts 1.15
 import org.kde.plasma.core 2.0 as PlasmaCore
 import org.kde.plasma.plasmoid 2.0
@@ -268,7 +268,7 @@ Item {
             text: root.desktopName
             textFormat: Text.PlainText
             color: root.titleTextColor
-            opacity: compact.nameOnly ? 1 : 0.72
+            opacity: 1
             font.bold: true
             font.pixelSize: compact.nameOnly ? 24 : 14
             minimumPixelSize: 8
@@ -304,7 +304,8 @@ Item {
                 text: root.currentNote.length ? root.currentNote : qsTr("Click to add a note")
                 textFormat: Text.PlainText
                 color: root.noteTextColor
-                opacity: root.currentNote.length ? 1 : 0.55
+                opacity: 1
+                font.italic: root.currentNote.length === 0
 
                 font.pixelSize: 24
                 minimumPixelSize: 8
@@ -373,14 +374,16 @@ Item {
             anchors.margins: 12
             spacing: 8
 
-            Controls.Label {
+            PlasmaComponents3.Label {
                 Layout.fillWidth: true
                 text: root.renamingDesktop ? qsTr("Rename virtual desktop")
                                            : qsTr("Edit temporary desktop note")
                 font.bold: true
+                // Follow the active Plasma popup palette in light and dark modes.
+                color: PlasmaCore.Theme.textColor
             }
 
-            Controls.TextField {
+            PlasmaComponents3.TextField {
                 id: desktopNameEditor
                 visible: root.renamingDesktop
                 enabled: !root.renamePending
@@ -394,7 +397,7 @@ Item {
                 Keys.onEscapePressed: root.finishEditing()
             }
 
-            Controls.TextArea {
+            PlasmaComponents3.TextArea {
                 id: noteEditor
                 visible: root.editing
                 Layout.fillWidth: true
@@ -427,7 +430,7 @@ Item {
                 }
             }
 
-            Controls.Label {
+            PlasmaComponents3.Label {
                 visible: root.renameError.length > 0 && root.renamingDesktop
                 Layout.fillWidth: true
                 wrapMode: Text.WordWrap
@@ -437,19 +440,19 @@ Item {
 
             RowLayout {
                 Layout.fillWidth: true
-                Controls.Button {
+                PlasmaComponents3.Button {
                     visible: root.renamingDesktop
                     text: qsTr("Reset")
                     enabled: !root.renamePending
                     onClicked: root.resetDesktopName()
                 }
                 Item { Layout.fillWidth: true }
-                Controls.Button {
+                PlasmaComponents3.Button {
                     text: qsTr("Cancel")
                     enabled: !root.renamePending
                     onClicked: root.finishEditing()
                 }
-                Controls.Button {
+                PlasmaComponents3.Button {
                     text: root.renamingDesktop ? qsTr("Rename") : qsTr("Done")
                     enabled: !root.renamePending
                     onClicked: {
