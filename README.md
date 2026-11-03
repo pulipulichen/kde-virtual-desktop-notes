@@ -33,6 +33,36 @@ The eight automatic pairs use Material 3's container/on-container approach. The 
 
 These presets are assigned by **desktop position**, not by desktop name. Saved customizations are keyed to **KDE desktop IDs**, so renaming a desktop preserves its custom colors. Moving desktops may change their automatic color order. No per-desktop color records are written until you customize a desktop.
 
+## Readable popup and accessibility
+
+The rename/note editor popup uses **PlasmaComponents 3** widgets on Plasma 5.
+Its heading uses the Plasma theme's `textColor` so dark themes no longer
+render an almost invisible dark heading on a dark popup. Panel desktop titles
+and empty-note hints no longer use lowered opacity; empty-note hints are shown
+in italic instead. The default eight Material 3-inspired palettes remain the
+same. When choosing custom color pairs, keep normal text contrast at least
+**4.5:1**, and inspect both light and dark themes.
+
+Automated source and palette tests:
+
+```bash
+python3 -m unittest discover -s tests -v
+```
+
+A live KDE Plasma 5.27 session is still required to verify the actual theme
+and input method behavior.
+
+## Development skill
+
+Repository-specific coding guidance is in
+[`.agents/skills/kde-plasmoid-development/SKILL.md`](.agents/skills/kde-plasmoid-development/SKILL.md).
+It incorporates KDE official documentation and a community Plasma 6 skill,
+while targeting this project's **Plasma 5.27** runtime. It covers palette
+contrast, Qt Quick/Plasma controls, popups, keyboard/IME, four-language
+internationalization (English, Traditional Chinese, Simplified Chinese,
+Japanese), install/update/uninstall/build scripts, and direct-`main` edits.
+[`AGENTS.md`](AGENTS.md) links the skill for coding assistants.
+
 ## Installation (Kubuntu 24.04 / KDE Plasma 5)
 
 ```bash
