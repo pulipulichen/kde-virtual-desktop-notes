@@ -43,10 +43,18 @@ Use the Plasma 6 widget-development reference for ideas, **not** as drop-in code
   Check the **rendered** ratio after opacity blending. Never fade
   ordinary small text or empty-state hints below the contrast target;
   use italic style, weight, or a clear prefix instead.
-- Keep the eight Material 3-inspired per-desktop palette pairs
+- Keep sixteen Material 3-inspired per-desktop palette pairs
   in `package/contents/ui/DesktopPalette.js`; preserve distinct
-  desktops 1–8, custom colors keyed by desktop ID, and at least
-  4.5:1 effective foreground/background contrast.
+  desktops 1–16 (desktop 8 defaults to green for the LINE workspace),
+  custom colors keyed by desktop ID, and at least 4.5:1 effective
+  foreground/background contrast. Default pairs should exceed 9:1.
+- Place a live foreground/background preview button at the right edge of
+  the desktop-name text field. Only open the 16-color picker on demand,
+  as a modal dialog inside Plasma's anchored popup. Permit editing both
+  `#RRGGBB` fields and show the contrast ratio. Apply should persist only
+  valid accessible pairs; Cancel/Escape must discard draft choices.
+  Keep the name Reset distinct from the automatic-color reset and avoid
+  submitting the name when saving appearance.
 - Inspect light/dark Breeze styles, panel text, full popup, text caret,
   button/field states, focus/hover, custom colors, and scaling.
   Don't report a manual theme check unless a real KDE session was tested.
