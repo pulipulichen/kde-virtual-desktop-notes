@@ -27,10 +27,14 @@ case "$command" in
         position="$3"
         name="$4"
         [[ "$position" =~ ^[1-9][0-9]*$ ]] || { echo "Invalid desktop position." >&2; exit 2; }
-        [[ -n "${name//[[:space:]]/}" && "$name" != *$'\n'* && "$name" != *$'\r'* ]] || {
-            echo "The desktop name must be nonempty and on one line." >&2
+        [[ "$name" != *$'\n'* && "$name" != *$'\r'* ]] || {
+            echo "The desktop name must be on one line." >&2
             exit 2
         }
+        # Keep helper and popup consistent: blank names restore Desktop N.
+        if [[ -z "${name//[[:space:]]/}" ]]; then
+            name="Desktop ${position}"
+        fi
         command -v dbus-send >/dev/null 2>&1 || { echo "dbus-send is required." >&2; exit 1; }
 
         # TaskManager.VirtualDesktopInfo exposes 1-based numbers on X11 but
