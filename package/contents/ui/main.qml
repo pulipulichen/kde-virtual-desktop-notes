@@ -40,6 +40,8 @@ Item {
         return 0
     }
     readonly property var defaultColors: DesktopPalette.forIndex(desktopIndex)
+    // KWin's standard 1-based name; keep the requested Desktop N format.
+    readonly property string defaultDesktopName: "Desktop " + String(desktopIndex + 1)
     readonly property color titleTextColor: DesktopPalette.roleColor(currentDesktopColors, "title", defaultColors)
     readonly property color noteTextColor: DesktopPalette.roleColor(currentDesktopColors, "note", defaultColors)
     readonly property color backgroundColor: DesktopPalette.roleColor(currentDesktopColors, "background", defaultColors)
@@ -163,15 +165,16 @@ Item {
         plasmoid.expanded = false
     }
 
-    function submitDesktopRename(rawName) {
+    function submitDesktopRename(rawName, forceUpdate) {
         if (!renamingDesktop || renamePending)
             return
         var name = String(rawName).replace(/[\r\n]+/g, " ").trim()
-        if (!name) {
-            renameError = qsTr("Desktop name cannot be empty.")
-            return
-        }
-        if (name === desktopName) {
+        var useDefault = !name
+        if (useDefault)
+            name = defaultDesktopName
+        // The UI can already *display* Desktop N as a fallback for a blank
+        // KWin name. Persist the actual name when blank or resetting.
+        if (name === desktopName && !useDefault && !forceUpdate) {
             finishEditing()
             return
         }
@@ -185,6 +188,10 @@ Item {
         renamePending = true
         renameError = ""
         helperSource.connectSource(command)
+    }
+
+    function resetDesktopName() {
+        submitDesktopRename(defaultDesktopName, true)
     }
 
     // Plasma 5's native right-click menu appends these actions to Configure.
@@ -382,6 +389,7 @@ Item {
                 selectByMouse: true
                 font.pixelSize: 17
                 text: root.desktopName
+                placeholderText: root.defaultDesktopName
                 onAccepted: root.submitDesktopRename(text)
                 Keys.onEscapePressed: root.finishEditing()
             }
@@ -429,6 +437,12 @@ Item {
 
             RowLayout {
                 Layout.fillWidth: true
+                Controls.Button {
+                    visible: root.renamingDesktop
+                    text: qsTr("Reset")
+                    enabled: !root.renamePending
+                    onClicked: root.resetDesktopName()
+                }
                 Item { Layout.fillWidth: true }
                 Controls.Button {
                     text: qsTr("Cancel")
