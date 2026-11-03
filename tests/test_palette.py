@@ -60,7 +60,7 @@ class DesktopPaletteTests(unittest.TestCase):
     def test_custom_hex_draft_apply_cancel_and_contrast(self):
         self.assertIn("id: foregroundField", DIALOG)
         self.assertIn("id: backgroundField", DIALOG)
-        self.assertIn("signal colorsAccepted(string foreground, string background)", DIALOG)
+        self.assertIn("signal colorsAccepted(string foregroundHex, string backgroundHex)", DIALOG)
         self.assertIn("ratio >= 4.5", DIALOG)
         self.assertIn("enabled: dialog.canApply", DIALOG)
         self.assertIn("onClicked: dialog.close()", DIALOG)
