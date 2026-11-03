@@ -537,7 +537,7 @@ Item {
             x: (editPopup.width - width) / 2
             y: (editPopup.height - height) / 2
             onColorsAccepted: root.saveCurrentDesktopColorPair({
-                foreground: foreground, background: background
+                foreground: foregroundHex, background: backgroundHex
             })
             onAutomaticRequested: root.restoreAutomaticColors()
             onClosed: {
