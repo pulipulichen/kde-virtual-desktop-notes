@@ -31,6 +31,24 @@ Item {
         }
     }
     readonly property var currentDesktopColors: desktopColors[desktopKey] || ({})
+
+    // Icons are persistent appearance choices keyed to the same stable KWin IDs.
+    // With no icon selected, the panel continues showing the desktop name.
+    readonly property var desktopIcons: {
+        try {
+            var parsed = JSON.parse(plasmoid.configuration.desktopIcons || "{}")
+            return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+                    ? parsed : {}
+        } catch (error) {
+            return {}
+        }
+    }
+    readonly property var currentDesktopIcon: {
+        var entry = desktopIcons[desktopKey] || {}
+        var kind = entry.kind === "emoji" || entry.kind === "icon" ? entry.kind : ""
+        var value = typeof entry.value === "string" ? entry.value : ""
+        return kind && value ? {kind: kind, value: value} : {kind: "", value: ""}
+    }
     readonly property int desktopIndex: {
         var ids = desktopInfo.desktopIds || []
         for (var i = 0; i < ids.length; i++) {
@@ -219,6 +237,20 @@ Item {
         saveCurrentDesktopColorPair(null)
     }
 
+    function saveCurrentDesktopIcon(kind, value) {
+        if (desktopKey === "__unknown__" || renamePending)
+            return
+        var map = {}
+        var keys = Object.keys(desktopIcons)
+        for (var i = 0; i < keys.length; i++)
+            map[keys[i]] = desktopIcons[keys[i]]
+        if ((kind === "emoji" || kind === "icon") && String(value).length)
+            map[desktopKey] = {kind: kind, value: String(value)}
+        else
+            delete map[desktopKey]
+        plasmoid.configuration.desktopIcons = JSON.stringify(map)
+    }
+
     // Plasma 5's native right-click menu appends these actions to Configure.
     function action_renameDesktop() {
         startRenamingDesktop()
@@ -290,18 +322,30 @@ Item {
             anchors.rightMargin: 3
             height: visible ? (compact.nameOnly ? compact.height : Math.min(18, Math.max(11, compact.height * 0.32))) : 0
 
-            text: root.desktopName
+            text: root.currentDesktopIcon.kind === "icon" ? ""
+                  : root.currentDesktopIcon.kind === "emoji"
+                    ? root.currentDesktopIcon.value : root.desktopName
             textFormat: Text.PlainText
             color: root.titleTextColor
             opacity: 1
             font.bold: true
-            font.pixelSize: compact.nameOnly ? 24 : 14
+            font.pixelSize: root.currentDesktopIcon.kind === "emoji"
+                            ? (compact.nameOnly ? 34 : 22)
+                            : (compact.nameOnly ? 24 : 14)
             minimumPixelSize: 8
             fontSizeMode: Text.Fit
             wrapMode: Text.NoWrap
             elide: Text.ElideRight
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
+        }
+
+        PlasmaCore.IconItem {
+            visible: compact.showDesktopTitle && root.currentDesktopIcon.kind === "icon"
+            anchors.centerIn: desktopTitle
+            width: Math.min(compact.width - 6, compact.nameOnly ? compact.height - 6 : desktopTitle.height - 2)
+            height: width
+            source: root.currentDesktopIcon.kind === "icon" ? root.currentDesktopIcon.value : ""
         }
 
         // Click the title to open a properly anchored KDE editor.
@@ -356,13 +400,14 @@ Item {
     // therefore associated with the popup instead of a panel sub-item.
     Plasmoid.fullRepresentation: FocusScope {
         id: editPopup
-        Layout.minimumWidth: colorDialog.opened ? 430 : 300
-        Layout.preferredWidth: colorDialog.opened ? 440 : 340
+        Layout.minimumWidth: colorDialog.opened || iconDialog.opened ? 430 : 300
+        Layout.preferredWidth: colorDialog.opened || iconDialog.opened ? 440 : 340
         Layout.maximumWidth: 500
-        // Controls.Dialog is modal within the anchored Plasma popup; increase
-        // the window only while the chooser is open so all 16 swatches fit.
-        Layout.minimumHeight: colorDialog.opened ? 520 : (root.editing ? 172 : 135)
-        Layout.preferredHeight: colorDialog.opened ? 540 : (root.editing ? 190 : 150)
+        // Keep each modal inside Plasma's anchored popup, with room for grids.
+        Layout.minimumHeight: colorDialog.opened || iconDialog.opened
+                              ? 520 : (root.editing ? 172 : 135)
+        Layout.preferredHeight: colorDialog.opened || iconDialog.opened
+                                ? 540 : (root.editing ? 190 : 150)
 
         function focusEditor() {
             if (!visible || !plasmoid.expanded)
@@ -414,6 +459,36 @@ Item {
                 visible: root.renamingDesktop
                 Layout.fillWidth: true
                 spacing: 6
+
+                PlasmaComponents3.Button {
+                    id: iconPickerButton
+                    Layout.preferredWidth: 44
+                    Layout.preferredHeight: desktopNameEditor.implicitHeight
+                    enabled: !root.renamePending && root.desktopKey !== "__unknown__"
+                    padding: 3
+                    text: qsTr("Choose icon or emoji")
+                    contentItem: Item {
+                        Text {
+                            visible: root.currentDesktopIcon.kind !== "icon"
+                            anchors.centerIn: parent
+                            text: root.currentDesktopIcon.kind === "emoji"
+                                  ? root.currentDesktopIcon.value : "☺"
+                            textFormat: Text.PlainText
+                            font.pixelSize: 23
+                            color: PlasmaCore.Theme.textColor
+                        }
+                        PlasmaCore.IconItem {
+                            visible: root.currentDesktopIcon.kind === "icon"
+                            anchors.centerIn: parent
+                            width: 24
+                            height: 24
+                            source: root.currentDesktopIcon.kind === "icon"
+                                    ? root.currentDesktopIcon.value : ""
+                        }
+                    }
+                    onClicked: iconDialog.openIcons(root.currentDesktopIcon.kind,
+                                                   root.currentDesktopIcon.value)
+                }
 
                 PlasmaComponents3.TextField {
                     id: desktopNameEditor
@@ -546,12 +621,31 @@ Item {
             }
         }
 
+        DesktopIconDialog {
+            id: iconDialog
+            parent: editPopup
+            width: Math.max(320, editPopup.width - 16)
+            height: Math.max(460, editPopup.height - 16)
+            x: (editPopup.width - width) / 2
+            y: (editPopup.height - height) / 2
+            onIconAccepted: root.saveCurrentDesktopIcon(kind, value)
+            onClosed: {
+                if (root.renamingDesktop && !root.renamePending)
+                    desktopNameEditor.forceActiveFocus()
+            }
+        }
+
         Connections {
             target: root
-            function onDesktopKeyChanged() { colorDialog.close() }
+            function onDesktopKeyChanged() {
+                colorDialog.close()
+                iconDialog.close()
+            }
             function onRenamingDesktopChanged() {
-                if (!root.renamingDesktop)
+                if (!root.renamingDesktop) {
                     colorDialog.close()
+                    iconDialog.close()
+                }
             }
         }
     }
