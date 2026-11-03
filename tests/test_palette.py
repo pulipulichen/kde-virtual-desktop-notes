@@ -40,6 +40,20 @@ class DesktopPaletteTests(unittest.TestCase):
         self.assertIn('onColorChosen: settings.setColor("background", value)', CONFIG)
         self.assertIn('text: qsTr("Use desktop preset")', PICKER)
 
+    def test_popup_controls_follow_plasma_theme(self):
+        self.assertIn("import org.kde.plasma.components 3.0 as PlasmaComponents3", MAIN)
+        self.assertIn("PlasmaComponents3.Label {", MAIN)
+        self.assertIn("PlasmaComponents3.TextField {", MAIN)
+        self.assertIn("PlasmaComponents3.TextArea {", MAIN)
+        self.assertIn("PlasmaComponents3.Button {", MAIN)
+        self.assertIn("color: PlasmaCore.Theme.textColor", MAIN)
+        self.assertNotIn("Controls.Label {", MAIN)
+
+    def test_panel_text_is_not_dimmed_below_accessible_contrast(self):
+        self.assertNotIn("opacity: compact.nameOnly ? 1 : 0.72", MAIN)
+        self.assertNotIn("opacity: root.currentNote.length ? 1 : 0.55", MAIN)
+        self.assertIn("font.italic: root.currentNote.length === 0", MAIN)
+
     def test_session_notes_remain_unpersisted(self):
         xml = (ROOT / "package/contents/config/main.xml").read_text(encoding="utf-8")
         self.assertNotIn('name="notes"', xml)
