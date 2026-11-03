@@ -4,6 +4,7 @@ import QtQuick.Layouts 1.15
 import org.kde.plasma.core 2.0 as PlasmaCore
 import org.kde.plasma.plasmoid 2.0
 import org.kde.taskmanager 0.1 as TaskManager
+import "DesktopPalette.js" as DesktopPalette
 
 Item {
     id: root
@@ -14,7 +15,7 @@ Item {
     property bool editing: false
     property bool restoring: false
 
-    // Per-desktop colors persist in configuration; note text stays session-only.
+    // Color overrides persist by desktop ID; default pairs follow desktop order.
     readonly property var desktopColors: {
         try {
             var parsed = JSON.parse(plasmoid.configuration.desktopColors || "{}")
@@ -25,16 +26,18 @@ Item {
         }
     }
     readonly property var currentDesktopColors: desktopColors[desktopKey] || ({})
-    function isHexColor(value) {
-        return typeof value === "string" && /^#[0-9a-fA-F]{6}$/.test(value)
+    readonly property int desktopIndex: {
+        var ids = desktopInfo.desktopIds || []
+        for (var i = 0; i < ids.length; i++) {
+            if (String(ids[i]) === desktopKey)
+                return i
+        }
+        return 0
     }
-    readonly property color titleTextColor: isHexColor(currentDesktopColors.title)
-            ? currentDesktopColors.title : PlasmaCore.Theme.textColor
-    readonly property color noteTextColor: isHexColor(currentDesktopColors.note)
-            ? currentDesktopColors.note : PlasmaCore.Theme.textColor
-    readonly property bool customBackground: isHexColor(currentDesktopColors.background)
-    readonly property color backgroundColor: customBackground
-            ? currentDesktopColors.background : "transparent"
+    readonly property var defaultColors: DesktopPalette.forIndex(desktopIndex)
+    readonly property color titleTextColor: DesktopPalette.roleColor(currentDesktopColors, "title", defaultColors)
+    readonly property color noteTextColor: DesktopPalette.roleColor(currentDesktopColors, "note", defaultColors)
+    readonly property color backgroundColor: DesktopPalette.roleColor(currentDesktopColors, "background", defaultColors)
 
     TaskManager.VirtualDesktopInfo {
         id: desktopInfo
@@ -110,7 +113,6 @@ Item {
         Rectangle {
             anchors.fill: parent
             radius: 3
-            visible: root.customBackground
             color: root.backgroundColor
         }
 

@@ -12,8 +12,24 @@ A panel notes widget for **KDE Plasma 5.27** (such as Kubuntu 24.04). It automat
 - **Single editor for one or two lines:** Click the note area to edit. Enter a single line or press Enter to add a second line (up to two lines total). The desktop name appears above the notes and does not count toward the two-line limit.
 - **Adaptive font size:** Automatically scales text based on the available panel height, configured widget width, and text length. The editor uses the same actual font size as the displayed text.
 - **Adjustable width:** 80–900 px (**100 px by default**).
-- **Independent desktop colors:** Assign each virtual desktop separate colors for its name, note text, and optional background. Choose a preset or enter a custom `#RRGGBB` value. **System default** restores theme-based text colors or a transparent background.
+- **Distinct colors out of the box:** Desktops **1–8** automatically receive different **Material 3-inspired container/on-container palettes** (pastel backgrounds with dark, legible foregrounds). No setup is required. For more than eight desktops, the palette repeats.
+- **Custom foreground and background:** Set colors independently for each desktop; choose from the eight Material palettes or enter custom `#RRGGBB` values. The foreground applies to both the desktop name and note text; optional advanced overrides allow different text colors. Existing saved name/note/background overrides remain supported. **Restore this desktop's automatic colors** returns to its assigned preset.
 - **Notes reset on restart:** Notes are held only in the widget's memory and are never written to files. Restarting `plasmashell`, logging out, rebooting, or removing the widget clears all notes. Widget width, desktop-name visibility, and per-desktop colors are preserved.
+
+## Default desktop palette
+
+The eight automatic pairs use Material 3's container/on-container approach. The values below are carefully chosen **Material 3-inspired** tonal combinations, not a claim that they are official fixed Material theme tokens. Each foreground/background pair has at least **9:1 WCAG contrast** for normal-sized text.
+
+- **1 Blue:** foreground `#0B2545`, background `#D3E3FD`
+- **2 Teal:** foreground `#003731`, background `#B2F5EA`
+- **3 Purple:** foreground `#35165A`, background `#E9DDFF`
+- **4 Rose:** foreground `#5B1131`, background `#FFD9E2`
+- **5 Amber:** foreground `#4B2800`, background `#FFE0B2`
+- **6 Green:** foreground `#183B1E`, background `#CDECCB`
+- **7 Cyan:** foreground `#003641`, background `#B9EAF5`
+- **8 Indigo:** foreground `#1E2855`, background `#DEE1FF`
+
+These presets are assigned by **desktop position**, not by desktop name. Saved customizations are keyed to **KDE desktop IDs**, so renaming a desktop preserves its custom colors. Moving desktops may change their automatic color order. No per-desktop color records are written until you customize a desktop.
 
 ## Installation (Kubuntu 24.04 / KDE Plasma 5)
 
@@ -70,8 +86,8 @@ This removes the Plasmoid package and custom SVG/PNG icons installed for the cur
 3. Click outside the editor or press Esc to finish editing.
 4. Switch virtual desktops to see each desktop's own name and notes.
 5. Right-click the widget and open **Configure → Appearance** to adjust its width, desktop-name options, and colors.
-6. Under **Colors for virtual desktop**, select a desktop from the drop-down list. For **Desktop name text**, **Note text**, or **Background**, select a preset or type a six-digit hex color such as `#FF9800`. Click **Apply**.
-7. Repeat for other desktops. **Reset colors for this desktop** restores system theme text colors and a transparent background. Colors persist after a reboot; notes do not.
+6. Desktops 1–8 already have different background/foreground combinations. Under **Colors for virtual desktop**, select the desktop whose colors you want to modify. Set **Foreground (desktop name and notes)** and **Background**, choose a Material palette, or enter a custom six-digit hex color (for example, `#EADDFF`). Click **Apply**.
+7. Enable **Advanced: customize name and note text separately** if you need different text colors. **Restore this desktop's automatic colors** removes its overrides and brings back the default Material palette. Custom colors persist after a reboot; notes do not.
 
 To rename a virtual desktop, use KDE **System Settings → Workspace Behavior → Virtual Desktops** rather than the widget itself. If you have not assigned custom names, KDE's default names (such as "Desktop 1") are shown.
 
@@ -92,6 +108,7 @@ package/
   metadata.json
   contents/ui/main.qml            # Desktop IDs, names, notes, and font scaling
   contents/ui/ColorPreference.qml # Color presets, hex entry, and swatch preview
+  contents/ui/DesktopPalette.js    # Shared Material 3 color pairs and fallbacks
   contents/images/icon.svg        # Custom vector icon
   contents/images/icon.png        # Bundled Add Widgets thumbnail
   contents/ui/configGeneral.qml   # Width, desktop options, per-desktop colors

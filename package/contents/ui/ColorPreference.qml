@@ -1,47 +1,50 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15 as Controls
 import QtQuick.Layouts 1.15
+import "DesktopPalette.js" as DesktopPalette
 
-// Plasma 5 color selector with presets and a custom hex color field.
+// Shared preset/custom-hex picker. Empty overrides use the desktop's palette,
+// not a transparent background or Plasma theme-dependent text.
 ColumnLayout {
     id: picker
+    Layout.fillWidth: true
+    spacing: 4
 
     property string title: ""
-    property string colorValue: ""
+    property bool isBackground: false
+    property string overrideValue: ""
+    property string fallbackColor: "#D3E3FD"
+    readonly property string effectiveColor: DesktopPalette.isHexColor(overrideValue)
+            ? overrideValue : fallbackColor
     signal colorChosen(string value)
 
-    readonly property var palette: [
-        { text: qsTr("System default"), value: "" },
-        { text: qsTr("White"), value: "#FFFFFF" },
-        { text: qsTr("Black"), value: "#000000" },
-        { text: qsTr("Gray"), value: "#808080" },
-        { text: qsTr("Red"), value: "#EF5350" },
-        { text: qsTr("Orange"), value: "#FF9800" },
-        { text: qsTr("Yellow"), value: "#FFEB3B" },
-        { text: qsTr("Green"), value: "#66BB6A" },
-        { text: qsTr("Teal"), value: "#26A69A" },
-        { text: qsTr("Cyan"), value: "#26C6DA" },
-        { text: qsTr("Blue"), value: "#42A5F5" },
-        { text: qsTr("Purple"), value: "#AB47BC" },
-        { text: qsTr("Pink"), value: "#EC407A" }
-    ]
-
-    spacing: 4
-    Layout.fillWidth: true
+    readonly property var palette: {
+        var choices = [{ text: qsTr("Use desktop preset"), value: "" }]
+        for (var i = 0; i < DesktopPalette.presets.length; i++) {
+            var pair = DesktopPalette.forIndex(i)
+            choices.push({
+                text: pair.name,
+                value: isBackground ? pair.background : pair.foreground
+            })
+        }
+        return choices
+    }
 
     function syncControls() {
-        var index = 0
+        var found = -1
         for (var i = 0; i < palette.length; i++) {
-            if (palette[i].value.toUpperCase() === colorValue.toUpperCase()) {
-                index = i
+            if (palette[i].value.toUpperCase() === overrideValue.toUpperCase()) {
+                found = i
                 break
             }
         }
-        presetSelect.currentIndex = index
-        hexInput.text = colorValue
+        presetSelect.currentIndex = found
+        hexInput.text = effectiveColor
     }
 
-    onColorValueChanged: syncControls()
+    onOverrideValueChanged: syncControls()
+    onFallbackColorChanged: syncControls()
+    onIsBackgroundChanged: syncControls()
     Component.onCompleted: syncControls()
 
     Controls.Label {
@@ -55,7 +58,7 @@ ColumnLayout {
 
         Controls.ComboBox {
             id: presetSelect
-            Layout.preferredWidth: 175
+            Layout.preferredWidth: 176
             model: picker.palette
             textRole: "text"
             onActivated: picker.colorChosen(picker.palette[index].value)
@@ -68,13 +71,13 @@ ColumnLayout {
             inputMethodHints: Qt.ImhNoPredictiveText
             onEditingFinished: {
                 var chosen = text.trim()
-                if (chosen === "") {
-                    picker.colorChosen("")
-                } else if (/^#[0-9a-fA-F]{6}$/.test(chosen)) {
+                if (DesktopPalette.isHexColor(chosen))
                     picker.colorChosen(chosen.toUpperCase())
-                } else {
-                    text = picker.colorValue
-                }
+                else if (chosen === "")
+                    picker.colorChosen("")
+                else
+                    text = picker.effectiveColor
+                Qt.callLater(picker.syncControls)
             }
         }
 
@@ -82,15 +85,9 @@ ColumnLayout {
             Layout.preferredWidth: 26
             Layout.preferredHeight: 26
             radius: 4
-            color: picker.colorValue === "" ? "transparent" : picker.colorValue
+            color: picker.effectiveColor
             border.width: 1
             border.color: "#808080"
-
-            Controls.Label {
-                anchors.centerIn: parent
-                visible: picker.colorValue === ""
-                text: "–"
-            }
         }
     }
 }

@@ -2,20 +2,23 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15 as Controls
 import QtQuick.Layouts 1.15
 import org.kde.taskmanager 0.1 as TaskManager
+import "DesktopPalette.js" as DesktopPalette
 
 ColumnLayout {
     id: settings
+    spacing: 12
 
     property alias cfg_noteWidth: widthSpin.value
     property alias cfg_showDesktopName: showName.checked
     property alias cfg_desktopNameOnly: nameOnly.checked
-    // Only colors and UI preferences persist; notes remain session-only.
+    // Persist only visual overrides, not session-only note content.
     property string cfg_desktopColors: "{}"
 
     property string selectedDesktopKey: ""
-    property string selectedTitleColor: ""
-    property string selectedNoteColor: ""
-    property string selectedBackgroundColor: ""
+    property string selectedForegroundOverride: ""
+    property string selectedBackgroundOverride: ""
+    property string selectedTitleOverride: ""
+    property string selectedNoteOverride: ""
 
     readonly property var desktopChoices: {
         var choices = []
@@ -25,6 +28,7 @@ ColumnLayout {
             var name = names.length > i ? String(names[i]).trim() : ""
             choices.push({
                 key: String(ids[i]),
+                number: i + 1,
                 label: name.length ? name : qsTr("Desktop %1").arg(i + 1)
             })
         }
@@ -33,13 +37,28 @@ ColumnLayout {
             choices.push({
                 key: id === undefined || id === null || String(id) === ""
                      ? "__unknown__" : String(id),
+                number: 1,
                 label: qsTr("Current desktop")
             })
         }
         return choices
     }
-
-    spacing: 12
+    readonly property int selectedDesktopNumber: {
+        for (var i = 0; i < desktopChoices.length; i++) {
+            if (desktopChoices[i].key === selectedDesktopKey)
+                return desktopChoices[i].number
+        }
+        return 1
+    }
+    readonly property var selectedPreset: DesktopPalette.forIndex(selectedDesktopNumber - 1)
+    readonly property string selectedForegroundColor: DesktopPalette.isHexColor(selectedForegroundOverride)
+            ? selectedForegroundOverride : selectedPreset.foreground
+    readonly property string selectedBackgroundColor: DesktopPalette.isHexColor(selectedBackgroundOverride)
+            ? selectedBackgroundOverride : selectedPreset.background
+    readonly property string selectedTitleColor: DesktopPalette.isHexColor(selectedTitleOverride)
+            ? selectedTitleOverride : selectedForegroundColor
+    readonly property string selectedNoteColor: DesktopPalette.isHexColor(selectedNoteOverride)
+            ? selectedNoteOverride : selectedForegroundColor
 
     TaskManager.VirtualDesktopInfo {
         id: desktopInfo
@@ -57,9 +76,10 @@ ColumnLayout {
 
     function loadSelectedColors() {
         var entry = readColorMap()[selectedDesktopKey] || {}
-        selectedTitleColor = typeof entry.title === "string" ? entry.title : ""
-        selectedNoteColor = typeof entry.note === "string" ? entry.note : ""
-        selectedBackgroundColor = typeof entry.background === "string" ? entry.background : ""
+        selectedForegroundOverride = DesktopPalette.isHexColor(entry.foreground) ? entry.foreground : ""
+        selectedBackgroundOverride = DesktopPalette.isHexColor(entry.background) ? entry.background : ""
+        selectedTitleOverride = DesktopPalette.isHexColor(entry.title) ? entry.title : ""
+        selectedNoteOverride = DesktopPalette.isHexColor(entry.note) ? entry.note : ""
     }
 
     function syncDesktopSelection() {
@@ -88,20 +108,39 @@ ColumnLayout {
     function setColor(role, value) {
         if (!selectedDesktopKey)
             return
-        if (value !== "" && !/^#[0-9a-fA-F]{6}$/.test(value))
+        if (value !== "" && !DesktopPalette.isHexColor(value))
             return
 
         var map = readColorMap()
         var entry = map[selectedDesktopKey] || {}
-        if (value === "") {
+        if (value === "")
             delete entry[role]
-        } else {
+        else
             entry[role] = value.toUpperCase()
+
+        // A shared foreground choice supersedes historical per-text-role colors.
+        if (role === "foreground") {
+            delete entry.title
+            delete entry.note
         }
-        if (Object.keys(entry).length === 0) {
+
+        if (Object.keys(entry).length === 0)
             delete map[selectedDesktopKey]
-        } else {
+        else
             map[selectedDesktopKey] = entry
+
+        cfg_desktopColors = JSON.stringify(map)
+        loadSelectedColors()
+    }
+
+    function applyPreset(index) {
+        if (!selectedDesktopKey)
+            return
+        var chosen = DesktopPalette.forIndex(index)
+        var map = readColorMap()
+        map[selectedDesktopKey] = {
+            foreground: chosen.foreground,
+            background: chosen.background
         }
         cfg_desktopColors = JSON.stringify(map)
         loadSelectedColors()
@@ -162,35 +201,118 @@ ColumnLayout {
     Controls.Label {
         Layout.fillWidth: true
         wrapMode: Text.WordWrap
-        text: qsTr("Each desktop has independent colors. Click Apply to save them across restarts.")
+        text: qsTr("Desktops 1–8 automatically use eight distinct Material 3-inspired, high-contrast colors. Select a desktop to customize its foreground and background.")
+    }
+
+    Rectangle {
+        Layout.fillWidth: true
+        Layout.preferredHeight: 54
+        radius: 6
+        color: settings.selectedBackgroundColor
+        border.color: "#808080"
+        border.width: 1
+
+        Column {
+            anchors.centerIn: parent
+            spacing: 2
+            Controls.Label {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: qsTr("Desktop %1 · %2").arg(settings.selectedDesktopNumber).arg(settings.selectedPreset.name)
+                color: settings.selectedTitleColor
+                font.bold: true
+            }
+            Controls.Label {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: qsTr("Preview of the note text")
+                color: settings.selectedNoteColor
+            }
+        }
     }
 
     ColorPreference {
-        title: qsTr("Desktop name text")
-        colorValue: settings.selectedTitleColor
-        onColorChosen: settings.setColor("title", value)
+        title: qsTr("Foreground (desktop name and notes)")
+        isBackground: false
+        overrideValue: settings.selectedForegroundOverride
+        fallbackColor: settings.selectedPreset.foreground
+        onColorChosen: settings.setColor("foreground", value)
     }
 
     ColorPreference {
-        title: qsTr("Note text")
-        colorValue: settings.selectedNoteColor
-        onColorChosen: settings.setColor("note", value)
-    }
-
-    ColorPreference {
-        title: qsTr("Background (default is transparent)")
-        colorValue: settings.selectedBackgroundColor
+        title: qsTr("Background")
+        isBackground: true
+        overrideValue: settings.selectedBackgroundOverride
+        fallbackColor: settings.selectedPreset.background
         onColorChosen: settings.setColor("background", value)
     }
 
+    Controls.CheckBox {
+        id: advancedTextColors
+        text: qsTr("Advanced: customize name and note text separately")
+        checked: false
+    }
+
+    ColumnLayout {
+        visible: advancedTextColors.checked
+        Layout.fillWidth: true
+        ColorPreference {
+            title: qsTr("Desktop name text (optional override)")
+            isBackground: false
+            overrideValue: settings.selectedTitleOverride
+            fallbackColor: settings.selectedForegroundColor
+            onColorChosen: settings.setColor("title", value)
+        }
+        ColorPreference {
+            title: qsTr("Note text (optional override)")
+            isBackground: false
+            overrideValue: settings.selectedNoteOverride
+            fallbackColor: settings.selectedForegroundColor
+            onColorChosen: settings.setColor("note", value)
+        }
+    }
+
+    Controls.Label {
+        text: qsTr("Material 3 color pair presets")
+        font.bold: true
+    }
+
+    GridLayout {
+        Layout.fillWidth: true
+        columns: 4
+        rowSpacing: 6
+        columnSpacing: 6
+
+        Repeater {
+            model: DesktopPalette.presets.length
+            delegate: Controls.Button {
+                Layout.fillWidth: true
+                Layout.minimumWidth: 86
+                Layout.preferredHeight: 38
+                background: Rectangle {
+                    radius: 5
+                    color: DesktopPalette.forIndex(index).background
+                    border.width: 1
+                    border.color: "#808080"
+                }
+                contentItem: Controls.Label {
+                    text: String(index + 1) + " · " + DesktopPalette.forIndex(index).name
+                    color: DesktopPalette.forIndex(index).foreground
+                    font.bold: true
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+                onClicked: settings.applyPreset(index)
+            }
+        }
+    }
+
     Controls.Button {
-        text: qsTr("Reset colors for this desktop")
+        text: qsTr("Restore this desktop's automatic colors")
         onClicked: settings.resetSelectedColors()
     }
 
     Controls.Label {
         Layout.fillWidth: true
         wrapMode: Text.WordWrap
-        text: qsTr("In name-only mode, notes are hidden but not deleted. In normal mode, notes accept one or two lines and automatically fit the available space. Notes are erased when Plasma restarts; color preferences are not.")
+        text: qsTr("Click Apply to save color choices across restarts. Restoring removes this desktop's overrides and returns to its assigned preset. Notes remain session-only and are cleared on Plasma restart.")
     }
 }
