@@ -297,7 +297,7 @@ Item {
                 text: root.currentNote.length ? root.currentNote : qsTr("Click to add a note")
                 textFormat: Text.PlainText
                 color: root.noteTextColor
-                opacity: root.editing ? 0 : (root.currentNote.length ? 1 : 0.55)
+                opacity: root.currentNote.length ? 1 : 0.55
 
                 font.pixelSize: 24
                 minimumPixelSize: 8
