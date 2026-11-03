@@ -14,6 +14,28 @@ Item {
     property bool editing: false
     property bool restoring: false
 
+    // Per-desktop colors persist in configuration; note text stays session-only.
+    readonly property var desktopColors: {
+        try {
+            var parsed = JSON.parse(plasmoid.configuration.desktopColors || "{}")
+            return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+                    ? parsed : {}
+        } catch (error) {
+            return {}
+        }
+    }
+    readonly property var currentDesktopColors: desktopColors[desktopKey] || ({})
+    function isHexColor(value) {
+        return typeof value === "string" && /^#[0-9a-fA-F]{6}$/.test(value)
+    }
+    readonly property color titleTextColor: isHexColor(currentDesktopColors.title)
+            ? currentDesktopColors.title : PlasmaCore.Theme.textColor
+    readonly property color noteTextColor: isHexColor(currentDesktopColors.note)
+            ? currentDesktopColors.note : PlasmaCore.Theme.textColor
+    readonly property bool customBackground: isHexColor(currentDesktopColors.background)
+    readonly property color backgroundColor: customBackground
+            ? currentDesktopColors.background : "transparent"
+
     TaskManager.VirtualDesktopInfo {
         id: desktopInfo
     }
@@ -85,6 +107,13 @@ Item {
             }
         }
 
+        Rectangle {
+            anchors.fill: parent
+            radius: 3
+            visible: root.customBackground
+            color: root.backgroundColor
+        }
+
         Text {
             id: desktopTitle
             visible: compact.showDesktopTitle
@@ -97,7 +126,7 @@ Item {
 
             text: root.desktopName
             textFormat: Text.PlainText
-            color: PlasmaCore.Theme.textColor
+            color: root.titleTextColor
             opacity: compact.nameOnly ? 1 : 0.72
             font.bold: true
             font.pixelSize: compact.nameOnly ? 24 : 14
@@ -124,7 +153,7 @@ Item {
 
                 text: root.currentNote.length ? root.currentNote : qsTr("Click to add a note")
                 textFormat: Text.PlainText
-                color: PlasmaCore.Theme.textColor
+                color: root.noteTextColor
                 opacity: root.editing ? 0 : (root.currentNote.length ? 1 : 0.55)
 
                 font.pixelSize: 24
@@ -156,7 +185,7 @@ Item {
                 clip: true
                 text: root.currentNote
 
-                color: PlasmaCore.Theme.textColor
+                color: root.noteTextColor
                 selectedTextColor: PlasmaCore.Theme.highlightedTextColor
                 selectionColor: PlasmaCore.Theme.highlightColor
                 font.pixelSize: Math.max(8, Number(fittedNote.fontInfo.pixelSize) || 12)
