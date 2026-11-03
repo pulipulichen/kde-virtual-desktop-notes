@@ -3,9 +3,9 @@
         "Id": "org.pulipulichen.virtualdesktopnotes",
         "Name": "Virtual Desktop Notes",
         "Description": "Show the active virtual desktop name and edit responsive one- or two-line panel notes independently per desktop.",
-        "Icon": "org.pulipulichen.virtualdesktopnotes",
+        "Icon": "/images/icon.png",
         "Category": "Utilities",
-        "Version": "1.2.0",
+        "Version": "1.3.0",
         "License": "MIT",
         "Website": "https://github.com/pulipulichen/kde-virtual-desktop-notes",
         "Authors": [

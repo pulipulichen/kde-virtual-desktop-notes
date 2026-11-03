@@ -76,7 +76,14 @@ Item {
         Layout.maximumWidth: 900
         Layout.fillHeight: true
 
-        readonly property bool showDesktopTitle: plasmoid.configuration.showDesktopName
+        readonly property bool nameOnly: plasmoid.configuration.desktopNameOnly
+        readonly property bool showDesktopTitle: nameOnly || plasmoid.configuration.showDesktopName
+
+        onNameOnlyChanged: {
+            if (nameOnly) {
+                root.editing = false
+            }
+        }
 
         Text {
             id: desktopTitle
@@ -86,14 +93,14 @@ Item {
             anchors.right: parent.right
             anchors.leftMargin: 3
             anchors.rightMargin: 3
-            height: visible ? Math.min(18, Math.max(11, compact.height * 0.32)) : 0
+            height: visible ? (compact.nameOnly ? compact.height : Math.min(18, Math.max(11, compact.height * 0.32))) : 0
 
             text: root.desktopName
             textFormat: Text.PlainText
             color: PlasmaCore.Theme.textColor
-            opacity: 0.72
+            opacity: compact.nameOnly ? 1 : 0.72
             font.bold: true
-            font.pixelSize: 14
+            font.pixelSize: compact.nameOnly ? 24 : 14
             minimumPixelSize: 8
             fontSizeMode: Text.Fit
             wrapMode: Text.NoWrap
@@ -104,6 +111,7 @@ Item {
 
         FocusScope {
             id: noteArea
+            visible: !compact.nameOnly
             anchors.top: desktopTitle.bottom
             anchors.left: parent.left
             anchors.right: parent.right

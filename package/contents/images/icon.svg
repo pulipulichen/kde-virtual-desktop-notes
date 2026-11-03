@@ -1,35 +1,41 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-label="Virtual Desktop Notes icon">
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-label="Virtual desktops with a note">
   <defs>
-    <linearGradient id="base" x1="0" x2="1" y1="0" y2="1">
-      <stop offset="0" stop-color="#37bbf6"/>
-      <stop offset=".50" stop-color="#2167d9"/>
-      <stop offset="1" stop-color="#29248c"/>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1e93dc"/>
+      <stop offset=".54" stop-color="#1755bc"/>
+      <stop offset="1" stop-color="#152b77"/>
     </linearGradient>
-    <linearGradient id="window" x1="0" x2="1" y1="0" y2="1">
-      <stop offset="0" stop-color="#d5f8ff"/>
-      <stop offset="1" stop-color="#62b8ff"/>
+    <linearGradient id="paper" x1="0" y1="0" x2=".85" y2="1">
+      <stop offset="0" stop-color="#fffbe1"/>
+      <stop offset="1" stop-color="#ffdc77"/>
     </linearGradient>
-    <linearGradient id="paper" x1="0" x2="1" y1="0" y2="1">
-      <stop offset="0" stop-color="#fffef2"/>
-      <stop offset="1" stop-color="#ffe5a5"/>
-    </linearGradient>
-    <linearGradient id="pen" x1="0" x2="1" y1="0" y2="1">
-      <stop offset="0" stop-color="#cfb4ff"/>
-      <stop offset="1" stop-color="#704bd9"/>
+    <linearGradient id="pencil" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#69e8fc"/>
+      <stop offset="1" stop-color="#20a2ee"/>
     </linearGradient>
   </defs>
-  <rect x="6" y="6" width="244" height="244" rx="51" fill="url(#base)"/>
-  <rect x="7" y="7" width="242" height="242" rx="50" fill="none" stroke="#c1eeff" stroke-opacity=".6" stroke-width="2"/>
-  <path d="M44 88Q44 78 54 75L142 52Q152 49 152 60V142Q152 151 143 155L54 176Q44 179 44 169Z" fill="#073887" opacity=".5"/>
-  <path d="M38 81Q38 70 49 67L139 44Q151 41 151 52V142Q151 152 140 155L50 178Q38 181 38 169Z" fill="none" stroke="url(#window)" stroke-width="11" stroke-linejoin="round"/>
-  <path d="M77 102Q77 92 88 89L181 68Q193 65 193 77V158Q193 168 181 171L88 193Q77 195 77 184Z" fill="#0a4da7"/>
-  <path d="M77 102Q77 92 88 89L181 68Q193 65 193 77V158Q193 168 181 171L88 193Q77 195 77 184Z" fill="none" stroke="#8bcfff" stroke-width="10" stroke-linejoin="round"/>
-  <path d="M110 137Q110 124 123 122L205 108Q220 105 220 121V204Q220 218 206 221L124 236Q110 239 110 224Z" fill="#17215c" opacity=".35"/>
-  <rect x="109" y="112" width="114" height="116" rx="14" fill="url(#paper)" transform="rotate(-7 166 170)"/>
-  <path d="M105 128Q103 116 117 114L206 101Q221 99 222 113L223 131L106 146Z" fill="#ffd34d"/>
-  <path d="M128 163L194 155" stroke="#9ba6ae" stroke-width="10" stroke-linecap="round"/>
-  <path d="M131 186L178 180" stroke="#9ba6ae" stroke-width="10" stroke-linecap="round"/>
-  <path d="M182 210L210 168Q214 162 220 166L231 174Q236 179 231 185L199 224L180 231Z" fill="url(#pen)" stroke="#4d36a9" stroke-width="2" stroke-linejoin="round"/>
-  <path d="M182 210L180 231L199 224Z" fill="#29314f"/>
-  <path d="M211 168L231 184" stroke="#f4eaff" stroke-width="5"/>
+  <rect x="8" y="8" width="240" height="240" rx="49" fill="url(#background)"/>
+  <rect x="9" y="9" width="238" height="238" rx="48" fill="none" stroke="#b2e9ff" stroke-opacity=".65" stroke-width="2"/>
+  <!-- Four virtual desktops in a two-by-two overview. -->
+  <g fill="#b4e8ff" fill-opacity=".23" stroke="#bcefff" stroke-opacity=".82" stroke-width="5">
+    <rect x="34" y="38" width="83" height="78" rx="12"/>
+    <rect x="131" y="38" width="83" height="78" rx="12"/>
+    <rect x="34" y="130" width="83" height="78" rx="12"/>
+    <rect x="131" y="130" width="83" height="78" rx="12"/>
+  </g>
+  <path d="M48 53h52M48 65h35M145 53h52M145 65h35M48 145h52M48 157h35" fill="none" stroke="#c6f0ff" stroke-width="4" stroke-linecap="round" stroke-opacity=".57"/>
+  <!-- A sticky note clearly overlaps the desktop overview. -->
+  <rect x="90" y="93" width="135" height="131" rx="17" fill="#091d57" opacity=".3"/>
+  <rect x="85" y="87" width="134" height="132" rx="17" fill="url(#paper)" stroke="#fff3af" stroke-width="3"/>
+  <path d="M85 104q0-17 17-17h100q17 0 17 17v17H85Z" fill="#ffbd44"/>
+  <circle cx="111" cy="104" r="6" fill="#ffffff" opacity=".8"/>
+  <circle cx="131" cy="104" r="6" fill="#ffffff" opacity=".8"/>
+  <path d="M108 147h83M108 170h64M108 192h37" stroke="#826a72" stroke-opacity=".75" stroke-width="9" stroke-linecap="round"/>
+  <!-- Pen signals the notes can be edited. -->
+  <g transform="rotate(36 202 198)">
+    <rect x="192" y="164" width="19" height="57" rx="7" fill="url(#pencil)" stroke="#0662a2" stroke-width="2"/>
+    <rect x="192" y="164" width="19" height="10" rx="4" fill="#e0fbff"/>
+    <path d="M192 214h19l-9.5 21Z" fill="#fff0d0" stroke="#13557d" stroke-width="2"/>
+    <path d="M198 228h7l-3.5 7Z" fill="#15456f"/>
+  </g>
 </svg>

@@ -5,6 +5,7 @@ PLUGIN_ID="org.pulipulichen.virtualdesktopnotes"
 DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
 INSTALLED_DIR="$DATA_HOME/plasma/plasmoids/$PLUGIN_ID"
 ICON_TARGET="$DATA_HOME/icons/hicolor/scalable/apps/$PLUGIN_ID.svg"
+ICON_PNG_TARGET="$DATA_HOME/icons/hicolor/192x192/apps/$PLUGIN_ID.png"
 
 usage() {
   echo "Usage: bash scripts/uninstall.sh [--reload]"
@@ -44,10 +45,12 @@ else
   echo "Package not installed for this user: $PLUGIN_ID"
 fi
 
-if [[ -f "$ICON_TARGET" ]]; then
-  rm -- "$ICON_TARGET"
-  echo "Removed custom icon: $ICON_TARGET"
-fi
+for target in "$ICON_TARGET" "$ICON_PNG_TARGET"; do
+  if [[ -f "$target" ]]; then
+    rm -- "$target"
+    echo "Removed custom icon: $target"
+  fi
+done
 
 echo "Panel instances/configuration are not changed automatically."
 echo "Before uninstalling, right-click the panel and remove Virtual Desktop Notes from it."

@@ -10,6 +10,8 @@ ICON_DIR="$DATA_HOME/icons/hicolor/scalable/apps"
 ICON_NAME="$PLUGIN_ID"
 ICON_SOURCE="$PACKAGE/contents/images/icon.svg"
 ICON_TARGET="$ICON_DIR/$ICON_NAME.svg"
+ICON_PNG_SOURCE="$PACKAGE/contents/images/icon.png"
+ICON_PNG_TARGET="$DATA_HOME/icons/hicolor/192x192/apps/$ICON_NAME.png"
 
 usage() {
   echo "Usage: bash scripts/install.sh [--reload]"
@@ -41,13 +43,16 @@ if ! command -v kpackagetool5 >/dev/null 2>&1; then
   echo "Error: kpackagetool5 is missing. This package targets KDE Plasma 5." >&2
   exit 1
 fi
-if [[ ! -f "$ICON_SOURCE" ]]; then
+if [[ ! -f "$ICON_SOURCE" || ! -f "$ICON_PNG_SOURCE" ]]; then
   echo "Error: icon source missing: $ICON_SOURCE" >&2
   exit 1
 fi
 
-# Make the bespoke icon discoverable in Plasma's Add Widgets browser.
+# The metadata also references the bundled /images/icon.png directly, so KDE can
+# show the Add Widgets thumbnail without relying on the icon-theme cache.
+# Install theme copies as a fallback for older Plasma icon lookup paths.
 install -Dm644 "$ICON_SOURCE" "$ICON_TARGET"
+install -Dm644 "$ICON_PNG_SOURCE" "$ICON_PNG_TARGET"
 
 if [[ -d "$INSTALLED_DIR" ]]; then
   kpackagetool5 --type Plasma/Applet --upgrade "$PACKAGE"
@@ -57,6 +62,7 @@ fi
 
 echo "Installed $PLUGIN_ID"
 echo "Custom icon: $ICON_TARGET"
+echo "Custom thumbnail: $ICON_PNG_TARGET"
 if [[ "$RELOAD" == true ]]; then
   echo "Restarting Plasma Shell (this clears all session-only notes)..."
   reload_plasma

@@ -6,7 +6,11 @@
     <group name="General">
         <entry name="noteWidth" type="Int">
             <label>Panel widget width in pixels</label>
-            <default>240</default>
+            <default>100</default>
+        </entry>
+        <entry name="desktopNameOnly" type="Bool">
+            <label>Show only the virtual desktop name</label>
+            <default>false</default>
         </entry>
         <entry name="showDesktopName" type="Bool">
             <label>Show the current virtual desktop name</label>

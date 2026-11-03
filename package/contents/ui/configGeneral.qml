@@ -6,6 +6,7 @@ ColumnLayout {
     id: settings
     property alias cfg_noteWidth: widthSpin.value
     property alias cfg_showDesktopName: showName.checked
+    property alias cfg_desktopNameOnly: nameOnly.checked
 
     spacing: 12
 
@@ -19,19 +20,26 @@ ColumnLayout {
         to: 900
         stepSize: 10
         editable: true
-        value: 240
+        value: 100
         Layout.preferredWidth: 180
     }
 
     Controls.CheckBox {
+        id: nameOnly
+        text: qsTr("Show only the virtual desktop name (hide notes)")
+        checked: false
+    }
+
+    Controls.CheckBox {
         id: showName
-        text: qsTr("Show the current virtual desktop name")
+        text: qsTr("Show the current virtual desktop name above notes")
         checked: true
+        enabled: !nameOnly.checked
     }
 
     Controls.Label {
         Layout.fillWidth: true
         wrapMode: Text.WordWrap
-        text: qsTr("The title follows KDE's virtual desktop name. The note editor accepts one or two lines; the text automatically fits the panel's available space.")
+        text: qsTr("Name-only mode fills the panel with the active desktop name, without showing the note editor. Turning it off restores your session notes. In normal mode, notes accept one or two lines and automatically fit the available space.")
     }
 }
