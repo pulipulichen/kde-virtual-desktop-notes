@@ -2,92 +2,92 @@
 
 ![Virtual Desktop Notes icon](package/contents/images/icon.svg)
 
-適用於 **KDE Plasma 5.27**（例如 Kubuntu 24.04）的工具列筆記元件，可自動顯示目前 Virtual Desktop 的名字，並在每個虛擬桌面保留獨立的一行／兩行文字。
+A panel notes widget for **KDE Plasma 5.27** (such as Kubuntu 24.04). It automatically displays the current virtual desktop's name and lets you keep separate one- or two-line notes for each virtual desktop.
 
-## 功能
+## Features
 
-- **自動顯示桌面名稱**：從 KDE 取得目前桌面名稱，切換或重新命名桌面會自動更新。預設顯示，可在設定中隱藏。
-- **獨立筆記**：使用 KDE 虛擬桌面 ID 區分，桌面改名也不會讓筆記混淆。
-- **單一輸入框**：點擊筆記即可編輯，只輸入一行或按 Enter 寫第二行，最多兩行。桌面名稱在上方，不佔筆記行數。
-- **自適應字型**：文字大小依目前工具列高度、設定寬度與字數自動縮放；編輯時採用顯示字型的實際大小。
-- **可調寬度**：80–900 px，預設 240 px。
-- **重新開機清空筆記**：筆記只保留在元件記憶體，不寫入檔案；重啟 plasmashell、登出、重開機或移除元件都會清空。元件寬度和標題顯示偏好不會清空。
+- **Automatic desktop name display:** Retrieves the current virtual desktop name from KDE and updates it when you switch desktops or rename one. Enabled by default and can be hidden in the widget settings.
+- **Notes for each desktop:** Uses KDE virtual desktop IDs to keep notes separate, even if a desktop is renamed.
+- **Single editor for one or two lines:** Click the note area to edit. Enter a single line or press Enter to add a second line (up to two lines total). The desktop name appears above the notes and does not count toward the two-line limit.
+- **Adaptive font size:** Automatically scales text based on the available panel height, configured widget width, and text length. The editor uses the same actual font size as the displayed text.
+- **Adjustable width:** 80–900 px (240 px by default).
+- **Notes reset on restart:** Notes are held only in the widget's memory and are never written to files. Restarting `plasmashell`, logging out, rebooting, or removing the widget clears all notes. Widget width and desktop-name visibility preferences are preserved.
 
-## 安裝（Kubuntu 24.04 / KDE Plasma 5）
+## Installation (Kubuntu 24.04 / KDE Plasma 5)
 
-~~~bash
+```bash
 sudo apt install git
 git clone https://github.com/pulipulichen/kde-virtual-desktop-notes.git
 cd kde-virtual-desktop-notes
 bash scripts/install.sh
-~~~
+```
 
-安裝腳本也會將專用 SVG 圖示加入使用者的 `hicolor` 圖示主題，讓「新增元件」清單顯示專屬縮圖；**不需要 `sudo`**。
+The installation script also adds the custom SVG icon to your user's `hicolor` icon theme so it appears in the **Add Widgets** panel. **No `sudo` is needed** to run the installation script.
 
-安裝後，在 **KDE 工具列按右鍵 → 新增元件（Add Widgets）→ 搜尋 Virtual Desktop Notes → 加到工具列**。
+After installation, **right-click the KDE panel → Add Widgets → search for "Virtual Desktop Notes" → add it to the panel**.
 
-若要更新已安裝的版本：
+To update an existing installation:
 
-~~~bash
+```bash
 cd kde-virtual-desktop-notes
 git pull
 bash scripts/install.sh --reload
-~~~
+```
 
-`--reload` 會重新啟動 Plasma Shell，讓原本工具列上正在執行的舊版 QML 與圖示重新載入。**這會清空所有尚未持久化的筆記**（本工具設計上只保留在記憶體）。如不想立刻重啟，可先執行 `bash scripts/install.sh`，然後登出再登入；若仍見舊畫面，先從工具列移除元件再新增。
+The `--reload` option restarts Plasma Shell so that the existing widget reloads the updated QML and icon. **This clears all unsaved notes**, since notes are intentionally stored only in memory. If you prefer not to restart Plasma Shell immediately, run `bash scripts/install.sh` without `--reload` and log out and back in later. If the old interface is still shown, remove the widget from the panel and add it again.
 
-## 解除安裝
+## Uninstallation
 
-請先從工具列進入編輯模式，對 **Virtual Desktop Notes** 選擇 **移除元件**，再執行：
+First, enter panel edit mode and select **Remove Widget** for **Virtual Desktop Notes**. Then run:
 
-~~~bash
+```bash
 cd kde-virtual-desktop-notes
 git pull
 bash scripts/uninstall.sh
-~~~
+```
 
-這會移除目前使用者安裝的 Plasmoid 套件和本專案安裝的 SVG 圖示，**不會刪除其他工具列設定**，也不需要 `sudo`。重複執行不會因套件已不存在而失敗。若 KDE 還顯示快取的舊圖示，可登出再登入，或使用 `bash scripts/uninstall.sh --reload`（會清空工作階段筆記）。
+This removes the Plasmoid package and custom SVG icon installed for the current user. It **does not remove other panel settings**, and **does not require `sudo`**. Running it again is safe, even if the package has already been removed. If KDE still displays a cached icon, log out and back in or run `bash scripts/uninstall.sh --reload` (which clears session notes).
 
-## 使用方式
+## Usage
 
-1. 進入任一 KDE Virtual Desktop，上方會自動顯示桌面名稱（例如「工作」或「研究」）。
-2. 點下方筆記區輸入文字。Enter 用於第二行；可只寫一行。
-3. 點輸入框外或按 Esc 結束編輯。
-4. 切換虛擬桌面時，標題和筆記跟著更新，筆記互不影響。
-5. 右鍵開啟元件的 **設定 → Appearance**，調整寬度或取消勾選 **Show the current virtual desktop name**。
+1. Switch to any KDE virtual desktop. Its name (for example, "Work" or "Research") is displayed automatically above the note area.
+2. Click the note area to enter text. Press Enter for a second line, or leave it as a single line.
+3. Click outside the editor or press Esc to finish editing.
+4. Switch virtual desktops to see each desktop's own name and notes.
+5. Right-click the widget and open **Configure → Appearance** to adjust its width or disable **Show the current virtual desktop name**.
 
-桌面名稱需要從 KDE 系統設定（**系統設定 → 工作空間行為 → 虛擬桌面**）修改，而不是在本元件內編輯。若沒有自訂名稱，會顯示 Desktop 1 等預設名稱。
+To rename a virtual desktop, use KDE **System Settings → Workspace Behavior → Virtual Desktops** rather than the widget itself. If you have not assigned custom names, KDE's default names (such as "Desktop 1") are shown.
 
-## 產生 .plasmoid 安裝包
+## Build a .plasmoid Package
 
-~~~bash
+```bash
 sudo apt install zip
 bash scripts/build.sh
 kpackagetool5 --type Plasma/Applet --install dist/kde-virtual-desktop-notes.plasmoid
-~~~
+```
 
-套件儲存於 `dist/kde-virtual-desktop-notes.plasmoid`。如果元件已安裝，請將指令中的 `--install` 改為 `--upgrade`。建議透過 `scripts/install.sh` 安裝，以確保自訂圖示也安裝到使用者的圖示主題。
+The package is created at `dist/kde-virtual-desktop-notes.plasmoid`. If the widget is already installed, replace `--install` with `--upgrade` in the command above. Installing through `scripts/install.sh` is recommended because it also installs the custom icon into the user's icon theme.
 
-## 程式碼
+## Project Structure
 
-~~~text
+```text
 package/
   metadata.json
-  contents/ui/main.qml            # 桌面 ID、桌面名稱、筆記與字體縮放
-  contents/images/icon.svg        # 專用 Plasmoid 縮圖
-  contents/ui/configGeneral.qml   # 寬度與標題開關
-  contents/config/config.qml      # 設定分類
-  contents/config/main.xml        # 只存外觀設定
+  contents/ui/main.qml            # Desktop IDs, names, notes, and font scaling
+  contents/images/icon.svg        # Custom Plasmoid icon
+  contents/ui/configGeneral.qml   # Width and desktop-name visibility options
+  contents/config/config.qml      # Configuration categories
+  contents/config/main.xml        # Appearance preferences only
 scripts/install.sh
 scripts/uninstall.sh
 scripts/build.sh
-~~~
+```
 
-## 已知限制
+## Known Limitations
 
-- 這個版本針對 KDE Plasma 5 / Qt 5 設計，**尚未驗證 Plasma 6 相容性**。
-- 以水平工具列為主要使用環境；垂直工具列可能需要進一步調整。
-- 字體有最小大小限制，極長的字串可能會被省略。
-- 目前尚未在實體 Plasma 工作階段進行互動測試。
+- This version targets KDE Plasma 5 / Qt 5. **Compatibility with Plasma 6 has not been verified.**
+- Primarily designed for horizontal panels; vertical panels may require additional adjustments.
+- A minimum font size is enforced, so extremely long text may be truncated.
+- Interactive testing in a live Plasma desktop session has not yet been performed.
 
 Repository: https://github.com/pulipulichen/kde-virtual-desktop-notes
