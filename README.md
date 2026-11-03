@@ -10,6 +10,7 @@ A panel notes widget for **KDE Plasma 5.27** (such as Kubuntu 24.04). It automat
 - **Name-only mode:** Check **Show only the virtual desktop name (hide notes)** in Appearance to display the current desktop name across the entire widget. Notes are hidden (not deleted) until the option is disabled.
 - **Native context-menu actions:** Right-click the widget and choose **Rename current virtual desktop** or **Open virtual desktop settings**. The latter opens the KDE System Settings module shown in the screenshot.
 - **Direct, persistent renaming and reset:** Click the desktop title (or the entire widget in name-only mode) to open a **KDE-native editor anchored above the panel**. Press **Enter** or **Rename** to update the real KDE/KWin desktop name. An empty field restores **Desktop N** (N is the desktop number); **Reset** restores that name directly. **Esc** or **Cancel** dismisses the draft. Temporary notes stay separate.
+- **Optional per-desktop icon or emoji:** The **☺** button immediately to the **left** of the desktop-name field opens a modal chooser with **36 common work emojis** (projects, tasks, coding, meetings, chat, research, etc.) and **16 KDE theme icons**. The chooser has search, selection highlighting, **Apply/Cancel**, and **No icon — show desktop name**. When an icon/emoji is selected it replaces the desktop name in the panel's title area; clearing it restores the text. This never renames the actual KDE desktop. The choice is saved by desktop ID across restarts, independent of the note and the color palette.
 - **Notes for each desktop:** Uses KDE virtual desktop IDs to keep notes separate, even if a desktop is renamed.
 - **One- or two-line note editor:** Click the note area to open the same anchored popup in note mode. Enter up to two lines, then choose **Done** to keep the note for this session; **Cancel** / **Esc** discards the draft. The desktop name does not count toward the two-line limit.
 - **Adaptive panel font size:** Automatically scales displayed panel text based on height, width, and length. The separate popup has a comfortable editing font size and a real window for IME input.
@@ -17,7 +18,7 @@ A panel notes widget for **KDE Plasma 5.27** (such as Kubuntu 24.04). It automat
 - **Distinct colors out of the box:** Desktops **1–16** automatically receive different **Material 3-inspired container/on-container palettes** (pastel backgrounds with dark, legible foregrounds). Desktop **8 is green**, suitable for a LINE workspace. No setup is required. For more than sixteen desktops, the palette repeats.
 - **Custom foreground and background:** Set colors independently for each desktop; choose from the sixteen Material palettes or enter custom `#RRGGBB` values. The foreground applies to both the desktop name and note text; optional advanced overrides allow different text colors. Existing saved name/note/background overrides remain supported. **Restore this desktop's automatic colors** returns to its assigned preset.
 - **Color picker modal next to the name:** Click the desktop title (or right-click and choose **Rename current virtual desktop**). A small **Aa** button immediately to the right of the name field shows the *currently saved foreground/background colors*. Click it to open a separate **modal color dialog** with 16 pair previews and editable foreground/background `#RRGGBB` values. The selected pair is outlined. Changes are previewed but not saved until **Apply**; **Cancel** or **Esc** discard the draft. For legibility, custom colors must have at least a 4.5:1 WCAG contrast ratio. **Automatic colors** restores the desktop's position-based default and is independent of the name's **Reset** button. Saving colors never submits an uncommitted desktop-name edit. Palette selections persist across restarts.
-- **Notes reset on restart:** Notes are held only in the widget's memory and are never written to files. Restarting `plasmashell`, logging out, rebooting, or removing the widget clears all notes. Widget width, desktop-name visibility, and per-desktop colors are preserved.
+- **Notes reset on restart:** Notes are held only in the widget's memory and are never written to files. Restarting `plasmashell`, logging out, rebooting, or removing the widget clears all notes. Widget width, desktop-name visibility, per-desktop icon/emoji choices, and per-desktop colors are preserved.
 
 ## Default desktop palette
 
@@ -128,8 +129,9 @@ This removes the Plasmoid package and custom SVG/PNG icons installed for the cur
 4. Switch virtual desktops to see each desktop's own name and notes.
 5. To rename the current virtual desktop, click its title to open the anchored editor, type the new name, and press **Enter** or **Rename**. In **name-only mode**, click anywhere on the displayed name. Alternatively, right-click and choose **Rename current virtual desktop**. **Esc** or **Cancel** discards the change. Clear the field and submit to restore **Desktop N** (e.g., **Desktop 3** for virtual desktop 3), or click **Reset** to restore it immediately.
 6. Right-click the widget and choose **Open virtual desktop settings** to open the KDE Virtual Desktops KCM, or **Configure → Appearance** to adjust widget width, desktop-name options, and colors.
-7. Desktops 1–16 have distinct automatic color pairs; desktop 8 defaults to green for LINE. To change the current desktop quickly, click the **Aa** color button to the right of the rename field; choose one of 16 pairs or edit both HEX values in the modal, then **Apply**. **Cancel** / **Esc** discard the color draft. For advanced settings, use **Configure → Appearance → Colors for virtual desktop**. Saved overrides are preserved when upgrading, so click **Automatic colors** in the modal if desktop 8 has an older custom color.
-8. Enable **Advanced: customize name and note text separately** if you need different text colors. **Restore this desktop's automatic colors** removes its overrides and brings back the default Material palette. Custom colors persist after a reboot; notes do not.
+7. To set a work icon, open the desktop-name editor and click **☺** at the **left** of the text field. Search or choose an emoji/KDE icon in the modal, then press **Apply**. Choose **No icon — show desktop name** and **Apply** to restore plain text. **Cancel** / **Esc** discard the selection. Icons/emoji replace only the title area of the panel widget; the KDE desktop name itself stays intact and continues to be editable.
+8. Desktops 1–16 have distinct automatic color pairs; desktop 8 defaults to green for LINE. To change the current desktop quickly, click the **Aa** color button to the right of the rename field; choose one of 16 pairs or edit both HEX values in the modal, then **Apply**. **Cancel** / **Esc** discard the color draft. For advanced settings, use **Configure → Appearance → Colors for virtual desktop**. Saved overrides are preserved when upgrading, so click **Automatic colors** in the modal if desktop 8 has an older custom color.
+9. Enable **Advanced: customize name and note text separately** if you need different text colors. **Restore this desktop's automatic colors** removes its overrides and brings back the default Material palette. Custom colors persist after a reboot; notes do not.
 
 Virtual desktop names are managed by KWin and **persist after a reboot**; the widget's separate notes are temporary. The helper resolves X11 desktop numbers to KWin UUIDs before renaming; Wayland UUIDs are passed through. This project targets Plasma 5.27, and has not been live-tested on a KDE session in this environment. If D-Bus renaming is unavailable, use the **Open virtual desktop settings** action instead.
 
@@ -150,13 +152,15 @@ package/
   metadata.json
   contents/ui/main.qml            # Desktop IDs, names, notes, and font scaling
   contents/ui/ColorPreference.qml # Color presets, hex entry, and swatch preview
+  contents/ui/ColorPairDialog.qml # Modal color preset/custom picker
+  contents/ui/DesktopIconDialog.qml # Modal work emoji/KDE icon picker
   contents/ui/DesktopPalette.js    # Shared Material 3 color pairs and fallbacks
   contents/images/icon.svg        # Custom vector icon
   contents/images/icon.png        # Bundled Add Widgets thumbnail
   contents/ui/configGeneral.qml   # Width, desktop options, per-desktop colors
   contents/scripts/desktop-control.sh # Open KCM / rename via KWin D-Bus
   contents/config/config.qml      # Configuration categories
-  contents/config/main.xml        # Persistent appearance preferences only
+  contents/config/main.xml        # Persistent appearance preferences (including desktopIcons)
 scripts/install.sh
 scripts/uninstall.sh
 scripts/update.sh                 # Pull, reinstall, optionally reload Plasma
