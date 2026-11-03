@@ -1,5 +1,7 @@
 # KDE Virtual Desktop Notes
 
+![Virtual Desktop Notes icon](package/contents/images/icon.svg)
+
 適用於 **KDE Plasma 5.27**（例如 Kubuntu 24.04）的工具列筆記元件，可自動顯示目前 Virtual Desktop 的名字，並在每個虛擬桌面保留獨立的一行／兩行文字。
 
 ## 功能
@@ -20,6 +22,8 @@ cd kde-virtual-desktop-notes
 bash scripts/install.sh
 ~~~
 
+安裝腳本也會將專用 SVG 圖示加入使用者的 `hicolor` 圖示主題，讓「新增元件」清單顯示專屬縮圖；**不需要 `sudo`**。
+
 安裝後，在 **KDE 工具列按右鍵 → 新增元件（Add Widgets）→ 搜尋 Virtual Desktop Notes → 加到工具列**。
 
 若要更新已安裝的版本：
@@ -27,10 +31,22 @@ bash scripts/install.sh
 ~~~bash
 cd kde-virtual-desktop-notes
 git pull
-bash scripts/install.sh
+bash scripts/install.sh --reload
 ~~~
 
-如果更新後仍顯示舊介面，可移除舊元件再加入。也能重啟 `plasmashell` 重新載入，但這會清空現有筆記。
+`--reload` 會重新啟動 Plasma Shell，讓原本工具列上正在執行的舊版 QML 與圖示重新載入。**這會清空所有尚未持久化的筆記**（本工具設計上只保留在記憶體）。如不想立刻重啟，可先執行 `bash scripts/install.sh`，然後登出再登入；若仍見舊畫面，先從工具列移除元件再新增。
+
+## 解除安裝
+
+請先從工具列進入編輯模式，對 **Virtual Desktop Notes** 選擇 **移除元件**，再執行：
+
+~~~bash
+cd kde-virtual-desktop-notes
+git pull
+bash scripts/uninstall.sh
+~~~
+
+這會移除目前使用者安裝的 Plasmoid 套件和本專案安裝的 SVG 圖示，**不會刪除其他工具列設定**，也不需要 `sudo`。重複執行不會因套件已不存在而失敗。若 KDE 還顯示快取的舊圖示，可登出再登入，或使用 `bash scripts/uninstall.sh --reload`（會清空工作階段筆記）。
 
 ## 使用方式
 
@@ -50,7 +66,7 @@ bash scripts/build.sh
 kpackagetool5 --type Plasma/Applet --install dist/kde-virtual-desktop-notes.plasmoid
 ~~~
 
-套件儲存於 `dist/kde-virtual-desktop-notes.plasmoid`。如果元件已安裝，請將指令中的 `--install` 改為 `--upgrade`。
+套件儲存於 `dist/kde-virtual-desktop-notes.plasmoid`。如果元件已安裝，請將指令中的 `--install` 改為 `--upgrade`。建議透過 `scripts/install.sh` 安裝，以確保自訂圖示也安裝到使用者的圖示主題。
 
 ## 程式碼
 
@@ -58,10 +74,12 @@ kpackagetool5 --type Plasma/Applet --install dist/kde-virtual-desktop-notes.plas
 package/
   metadata.json
   contents/ui/main.qml            # 桌面 ID、桌面名稱、筆記與字體縮放
+  contents/images/icon.svg        # 專用 Plasmoid 縮圖
   contents/ui/configGeneral.qml   # 寬度與標題開關
   contents/config/config.qml      # 設定分類
   contents/config/main.xml        # 只存外觀設定
 scripts/install.sh
+scripts/uninstall.sh
 scripts/build.sh
 ~~~
 
