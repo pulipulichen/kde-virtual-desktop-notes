@@ -27,15 +27,26 @@ The widget includes both a vector SVG icon and a PNG thumbnail, referenced direc
 
 After installation, **right-click the KDE panel → Add Widgets → search for "Virtual Desktop Notes" → add it to the panel**.
 
-To update an existing installation:
+## Updating
+
+From an existing Git checkout, run:
 
 ```bash
 cd kde-virtual-desktop-notes
-git pull
-bash scripts/install.sh --reload
+bash scripts/update.sh
 ```
 
-The `--reload` option restarts Plasma Shell so that the existing widget reloads the updated QML and icon. **This clears all unsaved notes**, since notes are intentionally stored only in memory. If you prefer not to restart Plasma Shell immediately, run `bash scripts/install.sh` without `--reload` and log out and back in later. If the old interface is still shown, remove the widget from the panel and add it again. Previously saved custom width settings remain unchanged; new instances default to 100 px.
+This performs `git pull --ff-only`, reinstalls the widget with `scripts/install.sh`, and **restarts Plasma Shell by default** so existing panel instances load the latest QML and icon. **Restarting Plasma Shell clears all session-only notes.** The script requires no `sudo`.
+
+To reinstall without immediately restarting Plasma Shell:
+
+```bash
+bash scripts/update.sh --no-reload
+```
+
+With `--no-reload`, the existing panel widget may continue to display the old interface until you log out and back in or restart Plasma Shell. If the old interface still remains after a restart, remove the widget from the panel and add it again. Previously saved custom width settings remain unchanged; new instances default to 100 px.
+
+The update uses a fast-forward-only Git pull to avoid creating an accidental merge commit. If your working tree has conflicting local changes or the branch has diverged, Git stops instead of overwriting your work; resolve the conflict before retrying.
 
 ## Uninstallation
 
@@ -82,6 +93,7 @@ package/
   contents/config/main.xml        # Appearance preferences only
 scripts/install.sh
 scripts/uninstall.sh
+scripts/update.sh                 # Pull, reinstall, optionally reload Plasma
 scripts/build.sh
 ```
 
