@@ -59,8 +59,7 @@ Item {
                 root.pendingRenameKey = ""
                 if (targetUnchanged) {
                     if (succeeded) {
-                        root.renamingDesktop = false
-                        root.renameError = ""
+                        root.finishEditing()
                     } else {
                         var details = String(data["stderr"] || "").trim()
                         root.renameError = details.length ? details
@@ -136,12 +135,32 @@ Item {
         return command
     }
 
+    // Always edit in Plasma's own anchored popup window instead of the
+    // narrow panel QQuickItem. The IME receives usable caret screen coordinates.
     function startRenamingDesktop() {
         if (desktopKey === "__unknown__" || renamePending)
             return
         editing = false
         renameError = ""
         renamingDesktop = true
+        plasmoid.expanded = true
+    }
+
+    function startEditingNote() {
+        if (renamePending)
+            return
+        renamingDesktop = false
+        editing = true
+        plasmoid.expanded = true
+    }
+
+    function finishEditing() {
+        if (renamePending)
+            return
+        renamingDesktop = false
+        editing = false
+        renameError = ""
+        plasmoid.expanded = false
     }
 
     function submitDesktopRename(rawName) {
@@ -153,8 +172,7 @@ Item {
             return
         }
         if (name === desktopName) {
-            renamingDesktop = false
-            renameError = ""
+            finishEditing()
             return
         }
         var command = helperCommand("rename", [desktopKey, String(desktopIndex + 1), name])
@@ -182,8 +200,21 @@ Item {
 
     onDesktopKeyChanged: {
         renamingDesktop = false
+        editing = false
         renameError = ""
+        plasmoid.expanded = false
         loadNote()
+    }
+
+    Connections {
+        target: plasmoid
+        function onExpandedChanged() {
+            if (!plasmoid.expanded && !root.renamePending) {
+                root.renamingDesktop = false
+                root.editing = false
+                root.renameError = ""
+            }
+        }
     }
 
     Component.onCompleted: {
@@ -219,7 +250,7 @@ Item {
 
         Text {
             id: desktopTitle
-            visible: compact.showDesktopTitle || root.renamingDesktop
+            visible: compact.showDesktopTitle
             anchors.top: parent.top
             anchors.left: parent.left
             anchors.right: parent.right
@@ -241,55 +272,13 @@ Item {
             verticalAlignment: Text.AlignVCenter
         }
 
-        // Editing the desktop title changes KWin's real, persistent desktop
-        // name. The note editor below remains temporary and independent.
+        // Click the title to open a properly anchored KDE editor.
         MouseArea {
             anchors.fill: desktopTitle
-            visible: desktopTitle.visible && !root.renamingDesktop
-            enabled: visible
+            visible: desktopTitle.visible
             acceptedButtons: Qt.LeftButton
             cursorShape: Qt.IBeamCursor
             onClicked: root.startRenamingDesktop()
-        }
-
-        Controls.TextField {
-            id: desktopNameEditor
-            anchors.fill: desktopTitle
-            anchors.margins: 1
-            visible: root.renamingDesktop
-            enabled: !root.renamePending
-            maximumLength: 128
-            selectByMouse: true
-            text: root.desktopName
-            color: root.titleTextColor
-            font.pixelSize: Math.max(10, Number(desktopTitle.fontInfo.pixelSize) || 12)
-            horizontalAlignment: TextInput.AlignHCenter
-            background: Rectangle {
-                color: root.backgroundColor
-                radius: 3
-                border.width: 1
-                border.color: PlasmaCore.Theme.highlightColor
-            }
-            onVisibleChanged: {
-                if (visible) {
-                    text = root.desktopName
-                    Qt.callLater(function() {
-                        if (desktopNameEditor.visible) {
-                            desktopNameEditor.forceActiveFocus()
-                            desktopNameEditor.selectAll()
-                        }
-                    })
-                }
-            }
-            onAccepted: root.submitDesktopRename(text)
-            Keys.onEscapePressed: {
-                if (!root.renamePending) {
-                    root.renamingDesktop = false
-                    root.renameError = ""
-                }
-            }
-            Controls.ToolTip.visible: root.renameError.length > 0
-            Controls.ToolTip.text: root.renameError
         }
 
         FocusScope {
@@ -322,84 +311,140 @@ Item {
 
             MouseArea {
                 anchors.fill: parent
-                enabled: !root.editing
-                cursorShape: Qt.IBeamCursor
                 acceptedButtons: Qt.LeftButton
-                onClicked: {
-                    root.editing = true
-                    noteEditor.forceActiveFocus()
-                }
+                cursorShape: Qt.IBeamCursor
+                onClicked: root.startEditingNote()
+            }
+        }
+    }
+
+    // KDE renders fullRepresentation in a real popup window anchored to
+    // compactRepresentation. Both the keyboard focus and IME caret are
+    // therefore associated with the popup instead of a panel sub-item.
+    Plasmoid.fullRepresentation: FocusScope {
+        id: editPopup
+        Layout.minimumWidth: 300
+        Layout.preferredWidth: 340
+        Layout.maximumWidth: 500
+        Layout.minimumHeight: root.editing ? 172 : 130
+        Layout.preferredHeight: root.editing ? 190 : 145
+
+        function focusEditor() {
+            if (!visible || !plasmoid.expanded)
+                return
+            if (root.renamingDesktop) {
+                desktopNameEditor.text = root.desktopName
+                desktopNameEditor.forceActiveFocus()
+                desktopNameEditor.selectAll()
+            } else if (root.editing) {
+                noteEditor.text = root.currentNote
+                noteEditor.forceActiveFocus()
+                noteEditor.cursorPosition = noteEditor.length
+            }
+        }
+
+        Component.onCompleted: Qt.callLater(focusEditor)
+        onVisibleChanged: {
+            if (visible)
+                Qt.callLater(focusEditor)
+        }
+
+        Connections {
+            target: root
+            function onRenamingDesktopChanged() {
+                if (root.renamingDesktop)
+                    Qt.callLater(editPopup.focusEditor)
+            }
+            function onEditingChanged() {
+                if (root.editing)
+                    Qt.callLater(editPopup.focusEditor)
+            }
+        }
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 12
+            spacing: 8
+
+            Controls.Label {
+                Layout.fillWidth: true
+                text: root.renamingDesktop ? qsTr("Rename virtual desktop")
+                                           : qsTr("Edit temporary desktop note")
+                font.bold: true
+            }
+
+            Controls.TextField {
+                id: desktopNameEditor
+                visible: root.renamingDesktop
+                enabled: !root.renamePending
+                Layout.fillWidth: true
+                maximumLength: 128
+                selectByMouse: true
+                font.pixelSize: 17
+                text: root.desktopName
+                onAccepted: root.submitDesktopRename(text)
+                Keys.onEscapePressed: root.finishEditing()
             }
 
             Controls.TextArea {
                 id: noteEditor
-                anchors.fill: parent
-                anchors.margins: 2
                 visible: root.editing
-                clip: true
+                Layout.fillWidth: true
+                Layout.preferredHeight: 76
+                selectByMouse: true
+                font.pixelSize: 17
+                wrapMode: TextEdit.NoWrap
                 text: root.currentNote
 
-                color: root.noteTextColor
-                selectedTextColor: PlasmaCore.Theme.highlightedTextColor
-                selectionColor: PlasmaCore.Theme.highlightColor
-                font.pixelSize: Math.max(8, Number(fittedNote.fontInfo.pixelSize) || 12)
-
-                wrapMode: TextEdit.NoWrap
-                horizontalAlignment: TextEdit.AlignHCenter
-                verticalAlignment: TextEdit.AlignVCenter
-                selectByMouse: true
-                leftPadding: 0
-                rightPadding: 0
-                topPadding: 0
-                bottomPadding: 0
-
-                background: Rectangle {
-                    color: "transparent"
-                    radius: 3
-                    border.width: 1
-                    border.color: PlasmaCore.Theme.highlightColor
-                }
-
+                // A draft is committed only by Done, never by IME preedit.
                 onTextChanged: {
-                    if (root.restoring) {
+                    if (inputMethodComposing)
                         return
-                    }
-
                     var normalized = root.normalizeNote(text)
                     if (normalized !== text) {
-                        var oldPos = cursorPosition
+                        var pos = cursorPosition
                         text = normalized
-                        cursorPosition = Math.min(oldPos, text.length)
-                        return
+                        cursorPosition = Math.min(pos, text.length)
                     }
-                    root.saveNote(text)
                 }
-
                 Keys.onPressed: {
-                    if ((event.key === Qt.Key_Enter || event.key === Qt.Key_Return)
-                            && noteEditor.text.indexOf("\n") !== -1) {
+                    if (event.key === Qt.Key_Escape) {
+                        root.finishEditing()
                         event.accepted = true
-                    } else if (event.key === Qt.Key_Escape) {
-                        root.editing = false
+                    } else if (!inputMethodComposing
+                            && (event.key === Qt.Key_Enter || event.key === Qt.Key_Return)
+                            && text.indexOf("\n") !== -1) {
                         event.accepted = true
-                    }
-                }
-
-                onActiveFocusChanged: {
-                    if (!activeFocus) {
-                        root.editing = false
                     }
                 }
             }
 
-            Connections {
-                target: root
-                function onCurrentNoteChanged() {
-                    // Keep the editor in sync after a virtual-desktop switch.
-                    if (noteEditor.text !== root.currentNote) {
-                        root.restoring = true
-                        noteEditor.text = root.currentNote
-                        root.restoring = false
+            Controls.Label {
+                visible: root.renameError.length > 0 && root.renamingDesktop
+                Layout.fillWidth: true
+                wrapMode: Text.WordWrap
+                color: PlasmaCore.Theme.negativeTextColor
+                text: root.renameError
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                Item { Layout.fillWidth: true }
+                Controls.Button {
+                    text: qsTr("Cancel")
+                    enabled: !root.renamePending
+                    onClicked: root.finishEditing()
+                }
+                Controls.Button {
+                    text: root.renamingDesktop ? qsTr("Rename") : qsTr("Done")
+                    enabled: !root.renamePending
+                    onClicked: {
+                        if (root.renamingDesktop)
+                            root.submitDesktopRename(desktopNameEditor.text)
+                        else {
+                            root.saveNote(noteEditor.text)
+                            root.finishEditing()
+                        }
                     }
                 }
             }

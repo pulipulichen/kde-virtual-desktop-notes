@@ -62,7 +62,11 @@ class DesktopControlTests(unittest.TestCase):
         self.assertIn('org.kde.plasma.core 2.0 as PlasmaCore', qml)
         self.assertIn('id: desktopNameEditor', qml)
         self.assertIn('root.submitDesktopRename(text)', qml)
-        self.assertIn('root.saveNote(text)', qml)
+        self.assertIn('Plasmoid.fullRepresentation: FocusScope', qml)
+        self.assertIn('id: editPopup', qml)
+        self.assertIn('root.saveNote(noteEditor.text)', qml)
+        self.assertIn('root.startEditingNote()', qml)
+        self.assertIn('plasmoid.expanded = true', qml)
 
 
 if __name__ == "__main__":

@@ -9,10 +9,10 @@ A panel notes widget for **KDE Plasma 5.27** (such as Kubuntu 24.04). It automat
 - **Automatic desktop name display:** Retrieves the current virtual desktop name from KDE and updates it when you switch desktops or rename one. Enabled by default and can be hidden in the widget settings.
 - **Name-only mode:** Check **Show only the virtual desktop name (hide notes)** in Appearance to display the current desktop name across the entire widget. Notes are hidden (not deleted) until the option is disabled.
 - **Native context-menu actions:** Right-click the widget and choose **Rename current virtual desktop** or **Open virtual desktop settings**. The latter opens the KDE System Settings module shown in the screenshot.
-- **Direct, persistent renaming:** Click the displayed desktop title (or the entire widget in name-only mode), enter a new name, and press **Enter**. This renames the actual KDE/KWin desktop via D-Bus and persists the name in KWin settings. Press **Esc** to cancel. Editing notes never renames desktops.
+- **Direct, persistent renaming:** Click the desktop title (or the entire widget in name-only mode) to open a **KDE-native editor anchored above the panel**. Press **Enter** or **Rename** to update the real KDE/KWin desktop name. **Esc** or **Cancel** dismisses the draft. Temporary notes stay separate.
 - **Notes for each desktop:** Uses KDE virtual desktop IDs to keep notes separate, even if a desktop is renamed.
-- **Single editor for one or two lines:** Click the note area to edit. Enter a single line or press Enter to add a second line (up to two lines total). The desktop name appears above the notes and does not count toward the two-line limit.
-- **Adaptive font size:** Automatically scales text based on the available panel height, configured widget width, and text length. The editor uses the same actual font size as the displayed text.
+- **One- or two-line note editor:** Click the note area to open the same anchored popup in note mode. Enter up to two lines, then choose **Done** to keep the note for this session; **Cancel** / **Esc** discards the draft. The desktop name does not count toward the two-line limit.
+- **Adaptive panel font size:** Automatically scales displayed panel text based on height, width, and length. The separate popup has a comfortable editing font size and a real window for IME input.
 - **Adjustable width:** 80–900 px (**100 px by default**).
 - **Distinct colors out of the box:** Desktops **1–8** automatically receive different **Material 3-inspired container/on-container palettes** (pastel backgrounds with dark, legible foregrounds). No setup is required. For more than eight desktops, the palette repeats.
 - **Custom foreground and background:** Set colors independently for each desktop; choose from the eight Material palettes or enter custom `#RRGGBB` values. The foreground applies to both the desktop name and note text; optional advanced overrides allow different text colors. Existing saved name/note/background overrides remain supported. **Restore this desktop's automatic colors** returns to its assigned preset.
@@ -84,10 +84,10 @@ This removes the Plasmoid package and custom SVG/PNG icons installed for the cur
 ## Usage
 
 1. Switch to any KDE virtual desktop. Its name (for example, "Work" or "Research") is displayed automatically above the note area.
-2. Click the note area to enter text. Press Enter for a second line, or leave it as a single line.
-3. Click outside the editor or press Esc to finish editing.
+2. Click the note area to open its anchored editor. Enter one or two lines and click **Done**. Press **Esc** or **Cancel** to discard the draft.
+3. The editor is a KDE-native popup next to the widget, rather than an input field embedded in the narrow panel. Clicking outside closes the popup.
 4. Switch virtual desktops to see each desktop's own name and notes.
-5. To rename the current virtual desktop, click its title, type a new name, and press **Enter**. In **name-only mode**, click anywhere on the displayed name. Alternatively, right-click the widget and choose **Rename current virtual desktop**. Press **Esc** to cancel; blank names are rejected.
+5. To rename the current virtual desktop, click its title to open the anchored editor, type the new name, and press **Enter** or **Rename**. In **name-only mode**, click anywhere on the displayed name. Alternatively, right-click and choose **Rename current virtual desktop**. **Esc** or **Cancel** discards the change; blank names are rejected.
 6. Right-click the widget and choose **Open virtual desktop settings** to open the KDE Virtual Desktops KCM, or **Configure → Appearance** to adjust widget width, desktop-name options, and colors.
 7. Desktops 1–8 already have different background/foreground combinations. Under **Colors for virtual desktop**, select the desktop whose colors you want to modify. Set **Foreground (desktop name and notes)** and **Background**, choose a Material palette, or enter a custom six-digit hex color (for example, `#EADDFF`). Click **Apply**.
 8. Enable **Advanced: customize name and note text separately** if you need different text colors. **Restore this desktop's automatic colors** removes its overrides and brings back the default Material palette. Custom colors persist after a reboot; notes do not.
@@ -129,6 +129,6 @@ scripts/build.sh
 - This version targets KDE Plasma 5 / Qt 5. **Compatibility with Plasma 6 has not been verified.**
 - Primarily designed for horizontal panels; vertical panels may require additional adjustments.
 - A minimum font size is enforced, so extremely long text may be truncated.
-- Interactive testing in a live Plasma desktop session has not yet been performed.
+- Interactive testing in a live Plasma desktop session has not yet been performed. Plasma's native popup supplies IMEs (including Fcitx5) a separate window coordinate system; verify candidate placement in your installation.
 
 Repository: https://github.com/pulipulichen/kde-virtual-desktop-notes

@@ -5,7 +5,7 @@
         "Description": "Show the active virtual desktop name and edit responsive one- or two-line panel notes independently per desktop.",
         "Icon": "/images/icon.png",
         "Category": "Utilities",
-        "Version": "1.6.0",
+        "Version": "1.6.1",
         "License": "MIT",
         "Website": "https://github.com/pulipulichen/kde-virtual-desktop-notes",
         "Authors": [
