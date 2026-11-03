@@ -1,107 +1,75 @@
-# KDE Virtual Desktop Notes（虛擬桌面臨時備忘錄）
+# KDE Virtual Desktop Notes
 
-A lightweight KDE Plasma panel widget that displays **two editable lines of notes for each virtual desktop**, with a configurable width in the QML source. Notes are kept in memory and automatically cleared when Plasma restarts or the computer reboots.
+適用於 **KDE Plasma 5.27**（例如 Kubuntu 24.04）的工具列筆記元件，可自動顯示目前 Virtual Desktop 的名字，並在每個虛擬桌面保留獨立的一行／兩行文字。
 
-這是一個放在 **KDE Plasma 工具列（Panel）**上的臨時備忘錄元件。切換不同虛擬桌面時，工具列會顯示該桌面自己的兩行文字，適合用來標記工作區的用途或待辦事項。
+## 功能
 
-## 功能特色
+- **自動顯示桌面名稱**：從 KDE 取得目前桌面名稱，切換或重新命名桌面會自動更新。預設顯示，可在設定中隱藏。
+- **獨立筆記**：使用 KDE 虛擬桌面 ID 區分，桌面改名也不會讓筆記混淆。
+- **單一輸入框**：點擊筆記即可編輯，只輸入一行或按 Enter 寫第二行，最多兩行。桌面名稱在上方，不佔筆記行數。
+- **自適應字型**：文字大小依目前工具列高度、設定寬度與字數自動縮放；編輯時採用顯示字型的實際大小。
+- **可調寬度**：80–900 px，預設 240 px。
+- **重新開機清空筆記**：筆記只保留在元件記憶體，不寫入檔案；重啟 plasmashell、登出、重開機或移除元件都會清空。元件寬度和標題顯示偏好不會清空。
 
-- **每個虛擬桌面獨立兩行文字**：切換桌面時，自動切換顯示的備忘錄內容。
-- **直接點擊編輯**：點擊工具列上的文字，即可在彈出介面修改兩行內容。
-- **只存於記憶體**：不寫入設定檔；重新啟動 Plasma 或電腦後，文字自動清空。
-- **簡潔的工具列外觀**：文字水平、垂直置中，預設寬度 205 px、字體 16 px。
-- **可從原始碼調整寬度、字體大小**：目前須修改 QML 並重新安裝，**尚未提供介面上的寬度調整控制項**。
+## 安裝（Kubuntu 24.04 / KDE Plasma 5）
 
-## 支援環境
+~~~bash
+sudo apt install git
+git clone https://github.com/pulipulichen/kde-virtual-desktop-notes.git
+cd kde-virtual-desktop-notes
+bash scripts/install.sh
+~~~
 
-這份 **v0.1 試作版**是以 **Kubuntu 24.04 預設的 KDE Plasma 5.27** 為目標，使用 `kpackagetool5` 安裝，尚未經實機驗證。**KDE Plasma 6 尚未確認相容**，請勿直接假設本套件能在 Plasma 6 上使用。
+安裝後，在 **KDE 工具列按右鍵 → 新增元件（Add Widgets）→ 搜尋 Virtual Desktop Notes → 加到工具列**。
 
-先查看版本：
+若要更新已安裝的版本：
 
-```bash
-plasmashell --version
-command -v kpackagetool5
-```
+~~~bash
+cd kde-virtual-desktop-notes
+git pull
+bash scripts/install.sh
+~~~
 
-## 安裝
+如果更新後仍顯示舊介面，可移除舊元件再加入。也能重啟 `plasmashell` 重新載入，但這會清空現有筆記。
 
-1. 下載儲存庫根目錄的 [kde-virtual-desktop-notes.plasmoid](./kde-virtual-desktop-notes.plasmoid)，或在終端機執行：
+## 使用方式
 
-   ```bash
-   curl -fL -O https://raw.githubusercontent.com/pulipulichen/kde-virtual-desktop-notes/main/kde-virtual-desktop-notes.plasmoid
-   ```
+1. 進入任一 KDE Virtual Desktop，上方會自動顯示桌面名稱（例如「工作」或「研究」）。
+2. 點下方筆記區輸入文字。Enter 用於第二行；可只寫一行。
+3. 點輸入框外或按 Esc 結束編輯。
+4. 切換虛擬桌面時，標題和筆記跟著更新，筆記互不影響。
+5. 右鍵開啟元件的 **設定 → Appearance**，調整寬度或取消勾選 **Show the current virtual desktop name**。
 
-2. 安裝 Plasma 小工具（一般使用者即可，**不需要 sudo**）：
+桌面名稱需要從 KDE 系統設定（**系統設定 → 工作空間行為 → 虛擬桌面**）修改，而不是在本元件內編輯。若沒有自訂名稱，會顯示 Desktop 1 等預設名稱。
 
-   ```bash
-   kpackagetool5 --type Plasma/Applet -i kde-virtual-desktop-notes.plasmoid
-   ```
+## 產生 .plasmoid 安裝包
 
-3. 在 KDE 桌面的工具列按右鍵，進入**編輯模式**，選擇**新增元件（Add Widgets）**。
-4. 搜尋 **「虛擬桌面臨時備忘錄」**或 **Virtual Desktop Notes**，將元件加入工具列（例如放在時鐘旁）。
-5. 點擊元件，輸入第一行與第二行；切換虛擬桌面，即可分別編輯各桌面的內容。
+~~~bash
+sudo apt install zip
+bash scripts/build.sh
+kpackagetool5 --type Plasma/Applet --install dist/kde-virtual-desktop-notes.plasmoid
+~~~
 
-> 初次安裝若未立即出現在元件清單，可以登出後重新登入 Plasma 工作階段再試。
+套件儲存於 `dist/kde-virtual-desktop-notes.plasmoid`。如果元件已安裝，請將指令中的 `--install` 改為 `--upgrade`。
 
-## 更新
+## 程式碼
 
-下載最新套件後，使用 `-u` 更新已安裝的版本：
+~~~text
+package/
+  metadata.json
+  contents/ui/main.qml            # 桌面 ID、桌面名稱、筆記與字體縮放
+  contents/ui/configGeneral.qml   # 寬度與標題開關
+  contents/config/config.qml      # 設定分類
+  contents/config/main.xml        # 只存外觀設定
+scripts/install.sh
+scripts/build.sh
+~~~
 
-```bash
-curl -fL -O https://raw.githubusercontent.com/pulipulichen/kde-virtual-desktop-notes/main/kde-virtual-desktop-notes.plasmoid
-kpackagetool5 --type Plasma/Applet -u kde-virtual-desktop-notes.plasmoid
-```
+## 已知限制
 
-若更新後仍顯示舊版介面，可重新登入 Plasma 工作階段。**重新啟動 Plasma 也會清空目前的備忘錄內容。**
+- 這個版本針對 KDE Plasma 5 / Qt 5 設計，**尚未驗證 Plasma 6 相容性**。
+- 以水平工具列為主要使用環境；垂直工具列可能需要進一步調整。
+- 字體有最小大小限制，極長的字串可能會被省略。
+- 目前尚未在實體 Plasma 工作階段進行互動測試。
 
-## 修改寬度與字體
-
-目前沒有圖形化設定選項。專案的 [`contents/ui/main.qml`](./contents/ui/main.qml) 定義了：
-
-```qml
-property int displayWidth: 205
-property int displayFontSize: 16
-```
-
-將 `205` 改成想要的寬度（像素），例如 `280`；也可改 `16` 調整文字大小。修改後，可從下載的專案根目錄重新打包：
-
-```bash
-zip -r kde-virtual-desktop-notes-custom.plasmoid metadata.desktop contents README.txt
-kpackagetool5 --type Plasma/Applet -u kde-virtual-desktop-notes-custom.plasmoid
-```
-
-> 這會修改元件的預設顯示大小，不會讓寬度變成可直接拖曳的互動設定。
-
-## 移除
-
-先從工具列移除元件，再執行：
-
-```bash
-kpackagetool5 --type Plasma/Applet -r org.pulipuli.virtualdesktopnotes
-```
-
-## 排除問題
-
-若元件無法載入，請檢查 Plasma 版本與使用者工作階段的 QML 記錄：
-
-```bash
-plasmashell --version
-journalctl --user -b | grep -Ei 'virtualdesktopnotes|pager|qml'
-```
-
-## 專案結構
-
-```text
-├── README.md
-├── README.txt
-├── LICENSE
-├── metadata.desktop
-├── contents/
-│   └── ui/
-│       └── main.qml
-└── kde-virtual-desktop-notes.plasmoid
-```
-
-## 授權
-
-[MIT License](./LICENSE)。
+Repository: https://github.com/pulipulichen/kde-virtual-desktop-notes
