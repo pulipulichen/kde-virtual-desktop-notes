@@ -36,6 +36,8 @@ cd kde-virtual-desktop-notes
 bash scripts/update.sh
 ```
 
+If your local checkout predates `scripts/update.sh`, run `git pull` once to obtain the script. Subsequent updates need only `bash scripts/update.sh`.
+
 This performs `git pull --ff-only`, reinstalls the widget with `scripts/install.sh`, and **restarts Plasma Shell by default** so existing panel instances load the latest QML and icon. **Restarting Plasma Shell clears all session-only notes.** The script requires no `sudo`.
 
 To reinstall without immediately restarting Plasma Shell:
