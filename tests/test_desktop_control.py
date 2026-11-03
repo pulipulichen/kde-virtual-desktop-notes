@@ -46,8 +46,24 @@ class DesktopControlTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn(b"string:wayland-uuid-123", self.log.read_bytes())
 
-    def test_rejects_blank_names_and_invalid_indices(self):
-        for args in (("rename", "1", "1", ""), ("rename", "2", "1", "Name"),
+    def test_blank_names_restore_desktop_number(self):
+        for raw in ("", "  ", "\t "):
+            with self.subTest(raw=raw):
+                self.log.unlink(missing_ok=True)
+                result = self.run_helper("rename", "3", "3", raw)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                items = self.log.read_bytes().split(b"\0")
+                self.assertIn(b"string:Desktop 3", items)
+                self.assertIn(b"Name_3", items)
+                self.assertIn(b"Desktop 3", items)
+
+    def test_blank_name_on_wayland_restores_numbered_default(self):
+        result = self.run_helper("rename", "wayland-uuid-123", "5", "")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(b"string:Desktop 5", self.log.read_bytes())
+
+    def test_rejects_invalid_indices_and_multiline_names(self):
+        for args in (("rename", "2", "1", "Name"),
                      ("rename", "uuid", "0", "Name"), ("rename", "uuid", "1", "a\nb")):
             with self.subTest(args=args):
                 self.assertNotEqual(self.run_helper(*args).returncode, 0)
@@ -62,6 +78,11 @@ class DesktopControlTests(unittest.TestCase):
         self.assertIn('org.kde.plasma.core 2.0 as PlasmaCore', qml)
         self.assertIn('id: desktopNameEditor', qml)
         self.assertIn('root.submitDesktopRename(text)', qml)
+        self.assertIn('function resetDesktopName()', qml)
+        self.assertIn('submitDesktopRename(defaultDesktopName, true)', qml)
+        self.assertIn('onClicked: root.resetDesktopName()', qml)
+        self.assertIn('placeholderText: root.defaultDesktopName', qml)
+        self.assertIn('readonly property string defaultDesktopName: "Desktop "', qml)
         self.assertIn('Plasmoid.fullRepresentation: FocusScope', qml)
         self.assertIn('id: editPopup', qml)
         self.assertIn('root.saveNote(noteEditor.text)', qml)
