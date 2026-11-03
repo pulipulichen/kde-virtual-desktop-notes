@@ -126,8 +126,13 @@ Controls.Dialog {
         PlasmaComponents3.Button {
             Layout.fillWidth: true
             text: qsTr("No icon — show desktop name")
-            checkable: true
-            checked: !dialog.draftKind
+            background: Rectangle {
+                radius: 6
+                color: PlasmaCore.Theme.backgroundColor
+                border.width: !dialog.draftKind ? 3 : 1
+                border.color: !dialog.draftKind
+                              ? PlasmaCore.Theme.highlightColor : PlasmaCore.Theme.textColor
+            }
             onClicked: dialog.selectIcon("", "")
         }
 
