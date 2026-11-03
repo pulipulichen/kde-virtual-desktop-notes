@@ -8,6 +8,8 @@ A panel notes widget for **KDE Plasma 5.27** (such as Kubuntu 24.04). It automat
 
 - **Automatic desktop name display:** Retrieves the current virtual desktop name from KDE and updates it when you switch desktops or rename one. Enabled by default and can be hidden in the widget settings.
 - **Name-only mode:** Check **Show only the virtual desktop name (hide notes)** in Appearance to display the current desktop name across the entire widget. Notes are hidden (not deleted) until the option is disabled.
+- **Native context-menu actions:** Right-click the widget and choose **Rename current virtual desktop** or **Open virtual desktop settings**. The latter opens the KDE System Settings module shown in the screenshot.
+- **Direct, persistent renaming:** Click the displayed desktop title (or the entire widget in name-only mode), enter a new name, and press **Enter**. This renames the actual KDE/KWin desktop via D-Bus and persists the name in KWin settings. Press **Esc** to cancel. Editing notes never renames desktops.
 - **Notes for each desktop:** Uses KDE virtual desktop IDs to keep notes separate, even if a desktop is renamed.
 - **Single editor for one or two lines:** Click the note area to edit. Enter a single line or press Enter to add a second line (up to two lines total). The desktop name appears above the notes and does not count toward the two-line limit.
 - **Adaptive font size:** Automatically scales text based on the available panel height, configured widget width, and text length. The editor uses the same actual font size as the displayed text.
@@ -85,11 +87,12 @@ This removes the Plasmoid package and custom SVG/PNG icons installed for the cur
 2. Click the note area to enter text. Press Enter for a second line, or leave it as a single line.
 3. Click outside the editor or press Esc to finish editing.
 4. Switch virtual desktops to see each desktop's own name and notes.
-5. Right-click the widget and open **Configure → Appearance** to adjust its width, desktop-name options, and colors.
-6. Desktops 1–8 already have different background/foreground combinations. Under **Colors for virtual desktop**, select the desktop whose colors you want to modify. Set **Foreground (desktop name and notes)** and **Background**, choose a Material palette, or enter a custom six-digit hex color (for example, `#EADDFF`). Click **Apply**.
-7. Enable **Advanced: customize name and note text separately** if you need different text colors. **Restore this desktop's automatic colors** removes its overrides and brings back the default Material palette. Custom colors persist after a reboot; notes do not.
+5. To rename the current virtual desktop, click its title, type a new name, and press **Enter**. In **name-only mode**, click anywhere on the displayed name. Alternatively, right-click the widget and choose **Rename current virtual desktop**. Press **Esc** to cancel; blank names are rejected.
+6. Right-click the widget and choose **Open virtual desktop settings** to open the KDE Virtual Desktops KCM, or **Configure → Appearance** to adjust widget width, desktop-name options, and colors.
+7. Desktops 1–8 already have different background/foreground combinations. Under **Colors for virtual desktop**, select the desktop whose colors you want to modify. Set **Foreground (desktop name and notes)** and **Background**, choose a Material palette, or enter a custom six-digit hex color (for example, `#EADDFF`). Click **Apply**.
+8. Enable **Advanced: customize name and note text separately** if you need different text colors. **Restore this desktop's automatic colors** removes its overrides and brings back the default Material palette. Custom colors persist after a reboot; notes do not.
 
-To rename a virtual desktop, use KDE **System Settings → Workspace Behavior → Virtual Desktops** rather than the widget itself. If you have not assigned custom names, KDE's default names (such as "Desktop 1") are shown.
+Virtual desktop names are managed by KWin and **persist after a reboot**; the widget's separate notes are temporary. The helper resolves X11 desktop numbers to KWin UUIDs before renaming; Wayland UUIDs are passed through. This project targets Plasma 5.27, and has not been live-tested on a KDE session in this environment. If D-Bus renaming is unavailable, use the **Open virtual desktop settings** action instead.
 
 ## Build a .plasmoid Package
 
@@ -112,6 +115,7 @@ package/
   contents/images/icon.svg        # Custom vector icon
   contents/images/icon.png        # Bundled Add Widgets thumbnail
   contents/ui/configGeneral.qml   # Width, desktop options, per-desktop colors
+  contents/scripts/desktop-control.sh # Open KCM / rename via KWin D-Bus
   contents/config/config.qml      # Configuration categories
   contents/config/main.xml        # Persistent appearance preferences only
 scripts/install.sh

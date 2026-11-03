@@ -14,6 +14,11 @@ Item {
     property string currentNote: ""
     property bool editing: false
     property bool restoring: false
+    property bool renamingDesktop: false
+    property bool renamePending: false
+    property string renameError: ""
+    property string pendingRenameCommand: ""
+    property string pendingRenameKey: ""
 
     // Color overrides persist by desktop ID; default pairs follow desktop order.
     readonly property var desktopColors: {
@@ -38,6 +43,34 @@ Item {
     readonly property color titleTextColor: DesktopPalette.roleColor(currentDesktopColors, "title", defaultColors)
     readonly property color noteTextColor: DesktopPalette.roleColor(currentDesktopColors, "note", defaultColors)
     readonly property color backgroundColor: DesktopPalette.roleColor(currentDesktopColors, "background", defaultColors)
+
+    // Plasma 5 provides an executable data engine, avoiding a compiled plugin.
+    // Commands always go to our fixed helper with shell-quoted arguments.
+    PlasmaCore.DataSource {
+        id: helperSource
+        engine: "executable"
+        connectedSources: []
+        onNewData: {
+            if (sourceName === root.pendingRenameCommand) {
+                var succeeded = Number(data["exit code"]) === 0
+                var targetUnchanged = root.desktopKey === root.pendingRenameKey
+                root.renamePending = false
+                root.pendingRenameCommand = ""
+                root.pendingRenameKey = ""
+                if (targetUnchanged) {
+                    if (succeeded) {
+                        root.renamingDesktop = false
+                        root.renameError = ""
+                    } else {
+                        var details = String(data["stderr"] || "").trim()
+                        root.renameError = details.length ? details
+                                : qsTr("Unable to rename this virtual desktop.")
+                    }
+                }
+            }
+            disconnectSource(sourceName)
+        }
+    }
 
     TaskManager.VirtualDesktopInfo {
         id: desktopInfo
@@ -88,8 +121,76 @@ Item {
         }
     }
 
-    onDesktopKeyChanged: loadNote()
-    Component.onCompleted: loadNote()
+    function shellQuote(value) {
+        return "'" + String(value).replace(/'/g, "'\\''") + "'"
+    }
+
+    function helperCommand(action, args) {
+        var fileUrl = String(Qt.resolvedUrl("../scripts/desktop-control.sh"))
+        if (fileUrl.indexOf("file://") !== 0)
+            return ""
+        var command = "bash " + shellQuote(decodeURIComponent(fileUrl.substring(7)))
+                + " " + shellQuote(action)
+        for (var i = 0; i < args.length; i++)
+            command += " " + shellQuote(args[i])
+        return command
+    }
+
+    function startRenamingDesktop() {
+        if (desktopKey === "__unknown__" || renamePending)
+            return
+        editing = false
+        renameError = ""
+        renamingDesktop = true
+    }
+
+    function submitDesktopRename(rawName) {
+        if (!renamingDesktop || renamePending)
+            return
+        var name = String(rawName).replace(/[\r\n]+/g, " ").trim()
+        if (!name) {
+            renameError = qsTr("Desktop name cannot be empty.")
+            return
+        }
+        if (name === desktopName) {
+            renamingDesktop = false
+            renameError = ""
+            return
+        }
+        var command = helperCommand("rename", [desktopKey, String(desktopIndex + 1), name])
+        if (!command) {
+            renameError = qsTr("Cannot locate the KDE virtual desktop helper.")
+            return
+        }
+        pendingRenameKey = desktopKey
+        pendingRenameCommand = command
+        renamePending = true
+        renameError = ""
+        helperSource.connectSource(command)
+    }
+
+    // Plasma 5's native right-click menu appends these actions to Configure.
+    function action_renameDesktop() {
+        startRenamingDesktop()
+    }
+
+    function action_openDesktopSettings() {
+        var command = helperCommand("settings", [])
+        if (command)
+            helperSource.connectSource(command)
+    }
+
+    onDesktopKeyChanged: {
+        renamingDesktop = false
+        renameError = ""
+        loadNote()
+    }
+
+    Component.onCompleted: {
+        loadNote()
+        Plasmoid.setAction("renameDesktop", qsTr("Rename current virtual desktop"), "edit-rename")
+        Plasmoid.setAction("openDesktopSettings", qsTr("Open virtual desktop settings"), "preferences-desktop-virtual")
+    }
 
     Plasmoid.preferredRepresentation: Plasmoid.compactRepresentation
 
@@ -118,7 +219,7 @@ Item {
 
         Text {
             id: desktopTitle
-            visible: compact.showDesktopTitle
+            visible: compact.showDesktopTitle || root.renamingDesktop
             anchors.top: parent.top
             anchors.left: parent.left
             anchors.right: parent.right
@@ -138,6 +239,57 @@ Item {
             elide: Text.ElideRight
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
+        }
+
+        // Editing the desktop title changes KWin's real, persistent desktop
+        // name. The note editor below remains temporary and independent.
+        MouseArea {
+            anchors.fill: desktopTitle
+            visible: desktopTitle.visible && !root.renamingDesktop
+            enabled: visible
+            acceptedButtons: Qt.LeftButton
+            cursorShape: Qt.IBeamCursor
+            onClicked: root.startRenamingDesktop()
+        }
+
+        Controls.TextField {
+            id: desktopNameEditor
+            anchors.fill: desktopTitle
+            anchors.margins: 1
+            visible: root.renamingDesktop
+            enabled: !root.renamePending
+            maximumLength: 128
+            selectByMouse: true
+            text: root.desktopName
+            color: root.titleTextColor
+            font.pixelSize: Math.max(10, Number(desktopTitle.fontInfo.pixelSize) || 12)
+            horizontalAlignment: TextInput.AlignHCenter
+            background: Rectangle {
+                color: root.backgroundColor
+                radius: 3
+                border.width: 1
+                border.color: PlasmaCore.Theme.highlightColor
+            }
+            onVisibleChanged: {
+                if (visible) {
+                    text = root.desktopName
+                    Qt.callLater(function() {
+                        if (desktopNameEditor.visible) {
+                            desktopNameEditor.forceActiveFocus()
+                            desktopNameEditor.selectAll()
+                        }
+                    })
+                }
+            }
+            onAccepted: root.submitDesktopRename(text)
+            Keys.onEscapePressed: {
+                if (!root.renamePending) {
+                    root.renamingDesktop = false
+                    root.renameError = ""
+                }
+            }
+            Controls.ToolTip.visible: root.renameError.length > 0
+            Controls.ToolTip.text: root.renameError
         }
 
         FocusScope {
