@@ -40,6 +40,22 @@ class DesktopPaletteTests(unittest.TestCase):
         self.assertIn('onColorChosen: settings.setColor("background", value)', CONFIG)
         self.assertIn('text: qsTr("Use desktop preset")', PICKER)
 
+    def test_rename_popup_quick_colors(self):
+        self.assertIn('text: qsTr("Color combinations")', MAIN)
+        self.assertIn('text: qsTr("Automatic colors")', MAIN)
+        self.assertIn("model: DesktopPalette.presets.length", MAIN)
+        self.assertIn("onClicked: root.applyColorPreset(index)", MAIN)
+        self.assertIn("onClicked: root.restoreAutomaticColors()", MAIN)
+        self.assertIn("plasmoid.configuration.desktopColors = JSON.stringify(map)", MAIN)
+        self.assertIn("delete map[desktopKey]", MAIN)
+        self.assertIn("foreground: pair.foreground", MAIN)
+        self.assertIn("background: pair.background", MAIN)
+
+    def test_rename_reset_is_separate_from_color_reset(self):
+        self.assertIn("function resetDesktopName()", MAIN)
+        self.assertIn("function restoreAutomaticColors()", MAIN)
+        self.assertIn("submitDesktopRename(defaultDesktopName, true)", MAIN)
+
     def test_popup_controls_follow_plasma_theme(self):
         self.assertIn("import org.kde.plasma.components 3.0 as PlasmaComponents3", MAIN)
         self.assertIn("PlasmaComponents3.Label {", MAIN)
