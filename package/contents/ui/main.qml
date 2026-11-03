@@ -45,6 +45,21 @@ Item {
     readonly property color titleTextColor: DesktopPalette.roleColor(currentDesktopColors, "title", defaultColors)
     readonly property color noteTextColor: DesktopPalette.roleColor(currentDesktopColors, "note", defaultColors)
     readonly property color backgroundColor: DesktopPalette.roleColor(currentDesktopColors, "background", defaultColors)
+    // Highlight the actual pair shown in the panel, including automatic colors.
+    // Custom title/note overrides are not a full two-color preset.
+    readonly property int activePaletteIndex: {
+        var entry = currentDesktopColors
+        if (DesktopPalette.isHexColor(entry.title) || DesktopPalette.isHexColor(entry.note))
+            return -1
+        var foreground = String(DesktopPalette.roleColor(entry, "title", defaultColors)).toUpperCase()
+        var background = String(DesktopPalette.roleColor(entry, "background", defaultColors)).toUpperCase()
+        for (var i = 0; i < DesktopPalette.presets.length; i++) {
+            var preset = DesktopPalette.forIndex(i)
+            if (foreground === preset.foreground && background === preset.background)
+                return i
+        }
+        return -1
+    }
 
     // Plasma 5 provides an executable data engine, avoiding a compiled plugin.
     // Commands always go to our fixed helper with shell-quoted arguments.
@@ -194,6 +209,37 @@ Item {
         submitDesktopRename(defaultDesktopName, true)
     }
 
+    // The quick palette uses the same persistent per-ID KConfig map as Appearance.
+    // Replacing a pair clears any old per-title/note overrides so the sample
+    // foreground matches both text roles. It does not edit the desktop name.
+    function saveCurrentDesktopColorPair(pair) {
+        if (desktopKey === "__unknown__" || renamePending)
+            return
+        var map = {}
+        var keys = Object.keys(desktopColors)
+        for (var i = 0; i < keys.length; i++)
+            map[keys[i]] = desktopColors[keys[i]]
+        if (pair) {
+            map[desktopKey] = {
+                foreground: pair.foreground,
+                background: pair.background
+            }
+        } else {
+            delete map[desktopKey]
+        }
+        plasmoid.configuration.desktopColors = JSON.stringify(map)
+    }
+
+    function applyColorPreset(index) {
+        if (index < 0 || index >= DesktopPalette.presets.length)
+            return
+        saveCurrentDesktopColorPair(DesktopPalette.forIndex(index))
+    }
+
+    function restoreAutomaticColors() {
+        saveCurrentDesktopColorPair(null)
+    }
+
     // Plasma 5's native right-click menu appends these actions to Configure.
     function action_renameDesktop() {
         startRenamingDesktop()
@@ -334,8 +380,8 @@ Item {
         Layout.minimumWidth: 300
         Layout.preferredWidth: 340
         Layout.maximumWidth: 500
-        Layout.minimumHeight: root.editing ? 172 : 130
-        Layout.preferredHeight: root.editing ? 190 : 145
+        Layout.minimumHeight: root.renamingDesktop ? 280 : 172
+        Layout.preferredHeight: root.renamingDesktop ? 302 : 190
 
         function focusEditor() {
             if (!visible || !plasmoid.expanded)
@@ -426,6 +472,70 @@ Item {
                             && (event.key === Qt.Key_Enter || event.key === Qt.Key_Return)
                             && text.indexOf("\n") !== -1) {
                         event.accepted = true
+                    }
+                }
+            }
+
+            RowLayout {
+                visible: root.renamingDesktop
+                Layout.fillWidth: true
+
+                PlasmaComponents3.Label {
+                    text: qsTr("Color combinations")
+                    font.bold: true
+                    color: PlasmaCore.Theme.textColor
+                }
+
+                Item { Layout.fillWidth: true }
+
+                PlasmaComponents3.Button {
+                    text: qsTr("Automatic colors")
+                    enabled: !root.renamePending
+                             && root.desktopKey !== "__unknown__"
+                             && Object.keys(root.currentDesktopColors).length > 0
+                    onClicked: root.restoreAutomaticColors()
+                }
+            }
+
+            GridLayout {
+                visible: root.renamingDesktop
+                Layout.fillWidth: true
+                columns: 4
+                rowSpacing: 5
+                columnSpacing: 5
+
+                Repeater {
+                    model: DesktopPalette.presets.length
+                    delegate: PlasmaComponents3.Button {
+                        id: colorPresetButton
+                        readonly property var preset: DesktopPalette.forIndex(index)
+                        Layout.fillWidth: true
+                        Layout.minimumWidth: 58
+                        Layout.preferredHeight: 40
+                        padding: 3
+                        enabled: !root.renamePending && root.desktopKey !== "__unknown__"
+                        // The native button provides hover, keyboard focus and
+                        // accessibility; its content displays the actual colors.
+                        text: qsTr("Color combination %1").arg(index + 1)
+                        contentItem: Rectangle {
+                            implicitWidth: 60
+                            implicitHeight: 30
+                            radius: 4
+                            color: colorPresetButton.preset.background
+                            border.width: root.activePaletteIndex === index ? 3 : 1
+                            border.color: root.activePaletteIndex === index
+                                          ? PlasmaCore.Theme.highlightColor : "#808080"
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: "Aa " + String(index + 1)
+                                textFormat: Text.PlainText
+                                color: colorPresetButton.preset.foreground
+                                font.bold: true
+                                font.pixelSize: 14
+                            }
+                        }
+                        onClicked: root.applyColorPreset(index)
                     }
                 }
             }
