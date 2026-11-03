@@ -14,23 +14,31 @@ A panel notes widget for **KDE Plasma 5.27** (such as Kubuntu 24.04). It automat
 - **One- or two-line note editor:** Click the note area to open the same anchored popup in note mode. Enter up to two lines, then choose **Done** to keep the note for this session; **Cancel** / **Esc** discards the draft. The desktop name does not count toward the two-line limit.
 - **Adaptive panel font size:** Automatically scales displayed panel text based on height, width, and length. The separate popup has a comfortable editing font size and a real window for IME input.
 - **Adjustable width:** 80–900 px (**100 px by default**).
-- **Distinct colors out of the box:** Desktops **1–8** automatically receive different **Material 3-inspired container/on-container palettes** (pastel backgrounds with dark, legible foregrounds). No setup is required. For more than eight desktops, the palette repeats.
-- **Custom foreground and background:** Set colors independently for each desktop; choose from the eight Material palettes or enter custom `#RRGGBB` values. The foreground applies to both the desktop name and note text; optional advanced overrides allow different text colors. Existing saved name/note/background overrides remain supported. **Restore this desktop's automatic colors** returns to its assigned preset.
-- **Quick colors in the rename popup:** Click the desktop title (or right-click and choose **Rename current virtual desktop**) to select any of the eight foreground/background color combinations immediately without opening Appearance. The currently active matching combination is outlined. **Automatic colors** restores the desktop's position-based default; it is independent from **Reset**, which restores the desktop name. Palette selections are saved across restarts while unsaved edits to the name are left untouched. For individually customized hex colors, use Appearance.
+- **Distinct colors out of the box:** Desktops **1–16** automatically receive different **Material 3-inspired container/on-container palettes** (pastel backgrounds with dark, legible foregrounds). Desktop **8 is green**, suitable for a LINE workspace. No setup is required. For more than sixteen desktops, the palette repeats.
+- **Custom foreground and background:** Set colors independently for each desktop; choose from the sixteen Material palettes or enter custom `#RRGGBB` values. The foreground applies to both the desktop name and note text; optional advanced overrides allow different text colors. Existing saved name/note/background overrides remain supported. **Restore this desktop's automatic colors** returns to its assigned preset.
+- **Color picker modal next to the name:** Click the desktop title (or right-click and choose **Rename current virtual desktop**). A small **Aa** button immediately to the right of the name field shows the *currently saved foreground/background colors*. Click it to open a separate **modal color dialog** with 16 pair previews and editable foreground/background `#RRGGBB` values. The selected pair is outlined. Changes are previewed but not saved until **Apply**; **Cancel** or **Esc** discard the draft. For legibility, custom colors must have at least a 4.5:1 WCAG contrast ratio. **Automatic colors** restores the desktop's position-based default and is independent of the name's **Reset** button. Saving colors never submits an uncommitted desktop-name edit. Palette selections persist across restarts.
 - **Notes reset on restart:** Notes are held only in the widget's memory and are never written to files. Restarting `plasmashell`, logging out, rebooting, or removing the widget clears all notes. Widget width, desktop-name visibility, and per-desktop colors are preserved.
 
 ## Default desktop palette
 
-The eight automatic pairs use Material 3's container/on-container approach. The values below are carefully chosen **Material 3-inspired** tonal combinations, not a claim that they are official fixed Material theme tokens. Each foreground/background pair has at least **9:1 WCAG contrast** for normal-sized text.
+The sixteen automatic pairs use Material 3's container/on-container approach. The values below are carefully chosen **Material 3-inspired** tonal combinations, not a claim that they are official fixed Material theme tokens. Each foreground/background pair has at least **9:1 WCAG contrast** for normal-sized text.
 
 - **1 Blue:** foreground `#0B2545`, background `#D3E3FD`
 - **2 Teal:** foreground `#003731`, background `#B2F5EA`
 - **3 Purple:** foreground `#35165A`, background `#E9DDFF`
 - **4 Rose:** foreground `#5B1131`, background `#FFD9E2`
 - **5 Amber:** foreground `#4B2800`, background `#FFE0B2`
-- **6 Green:** foreground `#183B1E`, background `#CDECCB`
+- **6 Indigo:** foreground `#1E2855`, background `#DEE1FF`
 - **7 Cyan:** foreground `#003641`, background `#B9EAF5`
-- **8 Indigo:** foreground `#1E2855`, background `#DEE1FF`
+- **8 Green (LINE workspace):** foreground `#183B1E`, background `#CDECCB`
+- **9 Slate:** foreground `#1C2935`, background `#DFE5EB`
+- **10 Coral:** foreground `#5E2319`, background `#FFDDD5`
+- **11 Sky:** foreground `#0A3552`, background `#D6EFFE`
+- **12 Lime:** foreground `#263800`, background `#E3F6BD`
+- **13 Mint:** foreground `#074233`, background `#D2F6E4`
+- **14 Peach:** foreground `#532C13`, background `#FFE5CF`
+- **15 Lavender:** foreground `#38265F`, background `#E8E1FA`
+- **16 Sand:** foreground `#4E3719`, background `#F8E8CC`
 
 These presets are assigned by **desktop position**, not by desktop name. Saved customizations are keyed to **KDE desktop IDs**, so renaming a desktop preserves its custom colors. Moving desktops may change their automatic color order. No per-desktop color records are written until you customize a desktop.
 
@@ -40,9 +48,9 @@ The rename/note editor popup uses **PlasmaComponents 3** widgets on Plasma 5.
 Its heading uses the Plasma theme's `textColor` so dark themes no longer
 render an almost invisible dark heading on a dark popup. Panel desktop titles
 and empty-note hints no longer use lowered opacity; empty-note hints are shown
-in italic instead. The default eight Material 3-inspired palettes remain the
-same. When choosing custom color pairs, keep normal text contrast at least
-**4.5:1**, and inspect both light and dark themes.
+in italic instead. The sixteen Material 3-inspired palettes have at least 9:1
+contrast. The modal prevents applying custom colors with less than **4.5:1**
+text contrast; still inspect actual light and dark Breeze themes.
 
 Automated source and palette tests:
 
