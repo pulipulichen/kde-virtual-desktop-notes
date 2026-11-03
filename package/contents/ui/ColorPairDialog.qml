@@ -14,7 +14,7 @@ Controls.Dialog {
     padding: 12
     closePolicy: Controls.Popup.CloseOnEscape
 
-    signal colorsAccepted(string foreground, string background)
+    signal colorsAccepted(string foregroundHex, string backgroundHex)
     signal automaticRequested()
 
     readonly property string draftForeground: foregroundField.text.trim().toUpperCase()
