@@ -8,6 +8,7 @@ PALETTE = (ROOT / "package/contents/ui/DesktopPalette.js").read_text(encoding="u
 MAIN = (ROOT / "package/contents/ui/main.qml").read_text(encoding="utf-8")
 CONFIG = (ROOT / "package/contents/ui/configGeneral.qml").read_text(encoding="utf-8")
 PICKER = (ROOT / "package/contents/ui/ColorPreference.qml").read_text(encoding="utf-8")
+DIALOG = (ROOT / "package/contents/ui/ColorPairDialog.qml").read_text(encoding="utf-8")
 
 
 def luminance(hex_color):
@@ -18,18 +19,22 @@ def luminance(hex_color):
 
 
 class DesktopPaletteTests(unittest.TestCase):
-    def test_eight_unique_readable_pairs(self):
+    def test_sixteen_unique_readable_pairs(self):
         pairs = re.findall(
             r'name:\s*"([^"]+)",\s*foreground:\s*"(#[0-9A-F]{6})",\s*background:\s*"(#[0-9A-F]{6})"',
             PALETTE
         )
-        self.assertEqual(len(pairs), 8)
+        self.assertEqual(len(pairs), 16)
         self.assertEqual(len(set(pairs)), 8)
-        self.assertEqual(len({bg for _, _, bg in pairs}), 8)
+        self.assertEqual(len({bg for _, _, bg in pairs}), 16)
         for name, fg, bg in pairs:
             l1, l2 = luminance(fg), luminance(bg)
             ratio = (max(l1, l2) + 0.05) / (min(l1, l2) + 0.05)
             self.assertGreaterEqual(ratio, 9.0, f"{name}: {ratio:.2f}:1")
+        # The eighth automatic desktop is dedicated to a green LINE workspace.
+        self.assertEqual(pairs[7][0], "Green")
+        self.assertEqual(pairs[7][1:], ("#183B1E", "#CDECCB"))
+        self.assertEqual(pairs[5][0], "Indigo")
 
     def test_runtime_and_settings_use_the_same_palette(self):
         self.assertIn("DesktopPalette.forIndex(desktopIndex)", MAIN)
@@ -40,21 +45,37 @@ class DesktopPaletteTests(unittest.TestCase):
         self.assertIn('onColorChosen: settings.setColor("background", value)', CONFIG)
         self.assertIn('text: qsTr("Use desktop preset")', PICKER)
 
-    def test_rename_popup_quick_colors(self):
-        self.assertIn('text: qsTr("Color combinations")', MAIN)
-        self.assertIn('text: qsTr("Automatic colors")', MAIN)
-        self.assertIn("model: DesktopPalette.presets.length", MAIN)
-        self.assertIn("onClicked: root.applyColorPreset(index)", MAIN)
-        self.assertIn("onClicked: root.restoreAutomaticColors()", MAIN)
-        self.assertIn("plasmoid.configuration.desktopColors = JSON.stringify(map)", MAIN)
-        self.assertIn("delete map[desktopKey]", MAIN)
-        self.assertIn("foreground: pair.foreground", MAIN)
-        self.assertIn("background: pair.background", MAIN)
+    def test_color_button_opens_modal_with_live_preview(self):
+        self.assertIn("id: colorPickerButton", MAIN)
+        self.assertIn("Layout.preferredWidth: 56", MAIN)
+        self.assertIn("color: root.backgroundColor", MAIN)
+        self.assertIn("color: root.titleTextColor", MAIN)
+        self.assertIn("onClicked: colorDialog.openColors(", MAIN)
+        self.assertIn("ColorPairDialog {", MAIN)
+        self.assertIn("modal: true", DIALOG)
+        self.assertIn("Controls.Popup.CloseOnEscape", DIALOG)
+        self.assertIn("model: DesktopPalette.presets.length", DIALOG)
+        self.assertIn("onClicked: dialog.choosePreset(index)", DIALOG)
 
-    def test_rename_reset_is_separate_from_color_reset(self):
+    def test_custom_hex_draft_apply_cancel_and_contrast(self):
+        self.assertIn("id: foregroundField", DIALOG)
+        self.assertIn("id: backgroundField", DIALOG)
+        self.assertIn("signal colorsAccepted(string foreground, string background)", DIALOG)
+        self.assertIn("ratio >= 4.5", DIALOG)
+        self.assertIn("enabled: dialog.canApply", DIALOG)
+        self.assertIn("onClicked: dialog.close()", DIALOG)
+        self.assertIn("onColorsAccepted: root.saveCurrentDesktopColorPair({", MAIN)
+        self.assertIn("plasmoid.configuration.desktopColors = JSON.stringify(map)", MAIN)
+        self.assertIn("function contrastRatio(foreground, background)", PALETTE)
+        self.assertIn("function indexOfPair(foreground, background)", PALETTE)
+
+    def test_rename_reset_remains_independent(self):
         self.assertIn("function resetDesktopName()", MAIN)
         self.assertIn("function restoreAutomaticColors()", MAIN)
         self.assertIn("submitDesktopRename(defaultDesktopName, true)", MAIN)
+        self.assertIn("onAutomaticRequested: root.restoreAutomaticColors()", MAIN)
+        self.assertIn('text: qsTr("Automatic colors")', DIALOG)
+        self.assertNotIn('text: qsTr("Color combinations")', MAIN)
 
     def test_popup_controls_follow_plasma_theme(self):
         self.assertIn("import org.kde.plasma.components 3.0 as PlasmaComponents3", MAIN)
