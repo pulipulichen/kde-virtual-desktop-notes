@@ -175,7 +175,7 @@ ColumnLayout {
     Controls.CheckBox {
         id: nameOnly
         text: qsTr("Show only the virtual desktop name (hide notes)")
-        checked: false
+        checked: true
     }
 
     Controls.CheckBox {
