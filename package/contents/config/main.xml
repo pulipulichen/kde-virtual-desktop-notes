@@ -10,7 +10,7 @@
         </entry>
         <entry name="desktopNameOnly" type="Bool">
             <label>Show only the virtual desktop name</label>
-            <default>false</default>
+            <default>true</default>
         </entry>
         <entry name="showDesktopName" type="Bool">
             <label>Show the current virtual desktop name</label>
