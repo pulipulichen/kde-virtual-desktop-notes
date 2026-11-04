@@ -19,6 +19,9 @@ Item {
     property string renameError: ""
     property string pendingRenameCommand: ""
     property string pendingRenameKey: ""
+    // Stage edits until the KWin rename succeeds; Cancel/failure must not save notes.
+    property bool pendingNoteSave: false
+    property string pendingNoteDraft: ""
 
     // Color overrides persist by desktop ID; default pairs follow desktop order.
     readonly property var desktopColors: {
@@ -74,11 +77,17 @@ Item {
             if (sourceName === root.pendingRenameCommand) {
                 var succeeded = Number(data["exit code"]) === 0
                 var targetUnchanged = root.desktopKey === root.pendingRenameKey
+                var shouldSaveNote = root.pendingNoteSave
+                var noteDraft = root.pendingNoteDraft
+                root.pendingNoteSave = false
+                root.pendingNoteDraft = ""
                 root.renamePending = false
                 root.pendingRenameCommand = ""
                 root.pendingRenameKey = ""
                 if (targetUnchanged) {
                     if (succeeded) {
+                        if (shouldSaveNote)
+                            root.saveNote(noteDraft)
                         root.finishEditing()
                     } else {
                         var details = String(data["stderr"] || "").trim()
@@ -183,8 +192,8 @@ Item {
         plasmoid.expanded = false
     }
 
-    function submitDesktopRename(rawName, forceUpdate) {
-        if (!renamingDesktop || renamePending)
+    function submitDesktopRename(rawName, forceUpdate, noteDraft) {
+        if ((!renamingDesktop && !editing) || renamePending)
             return
         var name = String(rawName).replace(/[\r\n]+/g, " ").trim()
         var useDefault = !name
@@ -193,6 +202,8 @@ Item {
         // The UI can already *display* Desktop N as a fallback for a blank
         // KWin name. Persist the actual name when blank or resetting.
         if (name === desktopName && !useDefault && !forceUpdate) {
+            if (noteDraft !== undefined)
+                saveNote(noteDraft)
             finishEditing()
             return
         }
@@ -203,6 +214,8 @@ Item {
         }
         pendingRenameKey = desktopKey
         pendingRenameCommand = command
+        pendingNoteSave = noteDraft !== undefined
+        pendingNoteDraft = pendingNoteSave ? normalizeNote(noteDraft) : ""
         renamePending = true
         renameError = ""
         helperSource.connectSource(command)
@@ -405,21 +418,24 @@ Item {
         Layout.maximumWidth: 500
         // Keep each modal inside Plasma's anchored popup, with room for grids.
         Layout.minimumHeight: colorDialog.opened || iconDialog.opened
-                              ? 520 : (root.editing ? 172 : 135)
+                              ? 520 : (plasmoid.configuration.desktopNameOnly ? 135 : 235)
         Layout.preferredHeight: colorDialog.opened || iconDialog.opened
-                                ? 540 : (root.editing ? 190 : 150)
+                                ? 540 : (plasmoid.configuration.desktopNameOnly ? 150 : 255)
 
         function focusEditor() {
             if (!visible || !plasmoid.expanded)
                 return
-            if (root.renamingDesktop) {
-                desktopNameEditor.text = root.desktopName
-                desktopNameEditor.forceActiveFocus()
-                desktopNameEditor.selectAll()
-            } else if (root.editing) {
-                noteEditor.text = root.currentNote
+            if (!root.renamingDesktop && !root.editing)
+                return
+            // Both fields share one popup and one commit, regardless of entry point.
+            desktopNameEditor.text = root.desktopName
+            noteEditor.text = root.currentNote
+            if (root.editing && !plasmoid.configuration.desktopNameOnly) {
                 noteEditor.forceActiveFocus()
                 noteEditor.cursorPosition = noteEditor.length
+            } else {
+                desktopNameEditor.forceActiveFocus()
+                desktopNameEditor.selectAll()
             }
         }
 
@@ -448,15 +464,14 @@ Item {
 
             PlasmaComponents3.Label {
                 Layout.fillWidth: true
-                text: root.renamingDesktop ? qsTr("Rename virtual desktop")
-                                           : qsTr("Edit temporary desktop note")
+                text: qsTr("Rename virtual desktop")
                 font.bold: true
                 // Follow the active Plasma popup palette in light and dark modes.
                 color: PlasmaCore.Theme.textColor
             }
 
             RowLayout {
-                visible: root.renamingDesktop
+                visible: root.renamingDesktop || root.editing
                 Layout.fillWidth: true
                 spacing: 6
 
@@ -499,7 +514,9 @@ Item {
                     font.pixelSize: 17
                     text: root.desktopName
                     placeholderText: root.defaultDesktopName
-                    onAccepted: root.submitDesktopRename(text)
+                    onAccepted: root.submitDesktopRename(
+                                    text, false,
+                                    plasmoid.configuration.desktopNameOnly ? undefined : noteEditor.text)
                     Keys.onEscapePressed: root.finishEditing()
                 }
 
@@ -534,9 +551,17 @@ Item {
                 }
             }
 
+            PlasmaComponents3.Label {
+                visible: !plasmoid.configuration.desktopNameOnly
+                Layout.fillWidth: true
+                text: qsTr("Edit temporary desktop note")
+                color: PlasmaCore.Theme.textColor
+            }
+
             PlasmaComponents3.TextArea {
                 id: noteEditor
-                visible: root.editing
+                visible: !plasmoid.configuration.desktopNameOnly
+                enabled: !root.renamePending
                 Layout.fillWidth: true
                 Layout.preferredHeight: 76
                 selectByMouse: true
@@ -544,7 +569,7 @@ Item {
                 wrapMode: TextEdit.NoWrap
                 text: root.currentNote
 
-                // A draft is committed only by Done, never by IME preedit.
+                // The draft is committed only with the name, never by IME preedit.
                 onTextChanged: {
                     if (inputMethodComposing)
                         return
@@ -568,7 +593,7 @@ Item {
             }
 
             PlasmaComponents3.Label {
-                visible: root.renameError.length > 0 && root.renamingDesktop
+                visible: root.renameError.length > 0 && (root.renamingDesktop || root.editing)
                 Layout.fillWidth: true
                 wrapMode: Text.WordWrap
                 color: PlasmaCore.Theme.negativeTextColor
@@ -578,7 +603,7 @@ Item {
             RowLayout {
                 Layout.fillWidth: true
                 PlasmaComponents3.Button {
-                    visible: root.renamingDesktop
+                    visible: root.renamingDesktop || root.editing
                     text: qsTr("Reset")
                     enabled: !root.renamePending
                     onClicked: root.resetDesktopName()
@@ -590,16 +615,11 @@ Item {
                     onClicked: root.finishEditing()
                 }
                 PlasmaComponents3.Button {
-                    text: root.renamingDesktop ? qsTr("Rename") : qsTr("Done")
+                    text: plasmoid.configuration.desktopNameOnly ? qsTr("Rename") : qsTr("Done")
                     enabled: !root.renamePending
-                    onClicked: {
-                        if (root.renamingDesktop)
-                            root.submitDesktopRename(desktopNameEditor.text)
-                        else {
-                            root.saveNote(noteEditor.text)
-                            root.finishEditing()
-                        }
-                    }
+                    onClicked: root.submitDesktopRename(
+                                   desktopNameEditor.text, false,
+                                   plasmoid.configuration.desktopNameOnly ? undefined : noteEditor.text)
                 }
             }
         }
@@ -616,7 +636,7 @@ Item {
             })
             onAutomaticRequested: root.restoreAutomaticColors()
             onClosed: {
-                if (root.renamingDesktop && !root.renamePending)
+                if ((root.renamingDesktop || root.editing) && !root.renamePending)
                     desktopNameEditor.forceActiveFocus()
             }
         }
