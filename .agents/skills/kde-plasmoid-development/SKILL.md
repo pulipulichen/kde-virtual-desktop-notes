@@ -70,11 +70,19 @@ Use the Plasma 6 widget-development reference for ideas, **not** as drop-in code
 
 ## Panel behavior and implementation
 
-- The compact panel defaults to **100 px** width. Preserve dynamic
-  font fitting and one-/two-line note layout.
+- The compact panel defaults to **100 px** width and **name-only mode**
+  (notes hidden by default). Preserve dynamic font fitting and
+  one-/two-line note layout when users enable notes.
 - Use an **anchored fullRepresentation popup** for input instead of
   placing a text field inside a narrow panel item; CJK IMEs need a real
   caret/window coordinate system.
+- With notes enabled, the rename popup and note-click popup must show
+  **both the desktop-name field and note editor together**. Focus the
+  field that was clicked. A single Done/Enter action submits both.
+  Save the session-only note immediately if the name did not change,
+  or only *after* KWin confirms a requested rename. Failed renames
+  and Cancel/Escape must not accidentally persist note drafts.
+  In name-only mode, hide the note editor completely.
 - Keep temporary notes **in memory only**, cleared on Plasma restart.
   Only appearance preferences persist through KConfig.
 - Read desktop IDs/names via `TaskManager.VirtualDesktopInfo` and
