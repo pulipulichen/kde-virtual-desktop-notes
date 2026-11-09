@@ -2,6 +2,7 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15 as Controls
 import QtQuick.Layouts 1.15
 import org.kde.taskmanager 0.1 as TaskManager
+import org.kde.plasma.core 2.0 as PlasmaCore
 import "DesktopPalette.js" as DesktopPalette
 
 ColumnLayout {
@@ -19,6 +20,11 @@ ColumnLayout {
     property string selectedBackgroundOverride: ""
     property string selectedTitleOverride: ""
     property string selectedNoteOverride: ""
+
+    property bool resetAllPending: false
+    property string resetAllCommand: ""
+    property int resetAllCount: 0
+    property string resetAllMessage: ""
 
     readonly property var desktopChoices: {
         var choices = []
@@ -62,6 +68,73 @@ ColumnLayout {
 
     TaskManager.VirtualDesktopInfo {
         id: desktopInfo
+    }
+
+    // Use the same trusted executable helper as main.qml; changes affect KWin
+    // immediately rather than waiting for the configuration page's Apply.
+    PlasmaCore.DataSource {
+        id: resetSource
+        engine: "executable"
+        connectedSources: []
+        onNewData: {
+            if (sourceName === settings.resetAllCommand) {
+                var succeeded = Number(data["exit code"]) === 0
+                settings.resetAllPending = false
+                settings.resetAllCommand = ""
+                if (succeeded) {
+                    settings.resetAllMessage = qsTr("Reset %1 virtual desktop name(s).")
+                            .arg(settings.resetAllCount)
+                } else {
+                    var error = String(data["stderr"] || "").trim()
+                    settings.resetAllMessage = error.length
+                            ? qsTr("Could not reset all desktop names: %1").arg(error)
+                            : qsTr("Could not reset all desktop names.")
+                }
+            }
+            disconnectSource(sourceName)
+        }
+    }
+
+    function shellQuote(value) {
+        return "'" + String(value).replace(/'/g, "'\\''") + "'"
+    }
+
+    function helperCommand(action, args) {
+        var fileUrl = String(Qt.resolvedUrl("../scripts/desktop-control.sh"))
+        if (fileUrl.indexOf("file://") !== 0)
+            return ""
+        var command = "bash " + shellQuote(decodeURIComponent(fileUrl.substring(7)))
+                + " " + shellQuote(action)
+        for (var i = 0; i < args.length; i++)
+            command += " " + shellQuote(args[i])
+        return command
+    }
+
+    function resetAllDesktopNames() {
+        if (resetAllPending)
+            return
+
+        // Capture the current ordered IDs (numeric on X11, UUIDs on Wayland).
+        var ids = desktopInfo.desktopIds || []
+        if (!ids.length) {
+            resetAllMessage = qsTr("No virtual desktops were found.")
+            return
+        }
+        var args = []
+        for (var i = 0; i < ids.length; i++) {
+            args.push(String(ids[i]))
+            args.push(String(i + 1))
+        }
+        var command = helperCommand("reset-all", args)
+        if (!command) {
+            resetAllMessage = qsTr("Cannot locate the KDE virtual desktop helper.")
+            return
+        }
+        resetAllCount = ids.length
+        resetAllMessage = ""
+        resetAllCommand = command
+        resetAllPending = true
+        resetSource.connectSource(command)
     }
 
     function readColorMap() {
@@ -183,6 +256,39 @@ ColumnLayout {
         text: qsTr("Show the current virtual desktop name above notes")
         checked: true
         enabled: !nameOnly.checked
+    }
+
+    Controls.Button {
+        text: settings.resetAllPending
+                ? qsTr("Resetting desktop names…")
+                : qsTr("Reset all virtual desktop names…")
+        enabled: !settings.resetAllPending && (desktopInfo.desktopIds || []).length > 0
+        onClicked: resetNamesConfirmation.open()
+    }
+
+    Controls.Label {
+        visible: settings.resetAllMessage.length > 0
+        Layout.fillWidth: true
+        wrapMode: Text.WordWrap
+        text: settings.resetAllMessage
+    }
+
+    Controls.Dialog {
+        id: resetNamesConfirmation
+        modal: true
+        focus: true
+        width: Math.min(460, settings.width)
+        x: (settings.width - width) / 2
+        y: Math.max(0, (settings.height - height) / 2)
+        title: qsTr("Reset all virtual desktop names?")
+        standardButtons: Controls.Dialog.Yes | Controls.Dialog.Cancel
+        onAccepted: settings.resetAllDesktopNames()
+
+        contentItem: Controls.Label {
+            wrapMode: Text.WordWrap
+            text: qsTr("Rename all %1 existing virtual desktops to Desktop 1, Desktop 2, and so on? This takes effect immediately and will not change your notes, icons, or colors.")
+                    .arg((desktopInfo.desktopIds || []).length)
+        }
     }
 
     Controls.Label {
