@@ -69,6 +69,70 @@ class DesktopControlTests(unittest.TestCase):
                 self.assertNotEqual(self.run_helper(*args).returncode, 0)
         self.assertFalse(self.log.exists())
 
+    def test_reset_all_names_x11_uses_each_position(self):
+        result = self.run_helper("reset-all", "1", "1", "2", "2", "3", "3")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Reset 3 desktop name(s).", result.stdout)
+        items = self.log.read_bytes().split(b"\\0")
+        for number in (1, 2, 3):
+            with self.subTest(desktop=number):
+                self.assertIn(f"string:Desktop {number}".encode(), items)
+                self.assertIn(f"Name_{number}".encode(), items)
+                self.assertIn(f"Desktop {number}".encode(), items)
+
+    def test_reset_all_names_wayland_uses_ids_not_ordinals(self):
+        result = self.run_helper("reset-all", "uuid-abc", "1", "uuid-def", "2")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        items = self.log.read_bytes().split(b"\\0")
+        self.assertIn(b"string:uuid-abc", items)
+        self.assertIn(b"string:uuid-def", items)
+        self.assertIn(b"string:Desktop 1", items)
+        self.assertIn(b"string:Desktop 2", items)
+
+    def test_reset_all_validates_complete_request_before_writing(self):
+        invalid = (
+            ("reset-all",),
+            ("reset-all", "uuid-abc", "1", "uuid-def"),
+            ("reset-all", "1", "1", "2", "3"),
+            ("reset-all", "uuid-abc", "1", "uuid-def", "1"),
+            ("reset-all", "uuid-abc", "0"),
+            ("reset-all", "", "1"),
+        )
+        for args in invalid:
+            with self.subTest(args=args):
+                result = self.run_helper(*args)
+                self.assertNotEqual(result.returncode, 0, result.stdout)
+                self.assertFalse(self.log.exists(), "Invalid input must not change any names")
+
+    def test_reset_all_continues_after_one_kwin_failure(self):
+        self.mock_command(
+            "dbus-send",
+            'printf "%s\\0" "$@" >> "$TEST_DESKTOP_LOG"; '
+            'if [[ " $* " == *"string:Desktop 2"* ]]; then exit 1; fi',
+        )
+        result = self.run_helper("reset-all", "uuid-one", "1", "uuid-two", "2",
+                                 "uuid-three", "3")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("Failed to reset Desktop 2", result.stderr)
+        self.assertIn("Unable to reset 1 virtual desktop name", result.stderr)
+        items = self.log.read_bytes().split(b"\\0")
+        self.assertIn(b"string:Desktop 1", items)
+        self.assertIn(b"string:Desktop 2", items)
+        self.assertIn(b"string:Desktop 3", items)
+        self.assertNotIn(b"Name_2", items)
+        self.assertIn(b"Name_1", items)
+        self.assertIn(b"Name_3", items)
+
+    def test_appearance_settings_reset_is_confirmed_and_does_not_touch_prefs(self):
+        qml = (ROOT / "package/contents/ui/configGeneral.qml").read_text(encoding="utf-8")
+        self.assertIn('text: qsTr("Reset all virtual desktop names…")', qml)
+        self.assertIn('id: resetNamesConfirmation', qml)
+        self.assertIn('standardButtons: Controls.Dialog.Yes | Controls.Dialog.Cancel', qml)
+        self.assertIn('helperCommand("reset-all", args)', qml)
+        self.assertIn('engine: "executable"', qml)
+        self.assertIn('args.push(String(ids[i]))', qml)
+        self.assertIn('args.push(String(i + 1))', qml)
+
     def test_qml_uses_native_context_menu_and_separate_name_editor(self):
         qml = (ROOT / "package/contents/ui/main.qml").read_text(encoding="utf-8")
         self.assertIn('Plasmoid.setAction("renameDesktop"', qml)
