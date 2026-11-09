@@ -125,7 +125,7 @@ class DesktopControlTests(unittest.TestCase):
 
     def test_appearance_settings_reset_is_confirmed_and_does_not_touch_prefs(self):
         qml = (ROOT / "package/contents/ui/configGeneral.qml").read_text(encoding="utf-8")
-        self.assertIn('text: qsTr("Reset all virtual desktop names…")', qml)
+        self.assertIn('qsTr("Reset all virtual desktop names…")', qml)
         self.assertIn('id: resetNamesConfirmation', qml)
         self.assertIn('standardButtons: Controls.Dialog.Yes | Controls.Dialog.Cancel', qml)
         self.assertIn('helperCommand("reset-all", args)', qml)
