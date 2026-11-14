@@ -325,7 +325,7 @@ Item {
             color: root.backgroundColor
         }
 
-        Text {
+        Item {
             id: desktopTitle
             visible: compact.showDesktopTitle
             anchors.top: parent.top
@@ -335,30 +335,66 @@ Item {
             anchors.rightMargin: 3
             height: visible ? (compact.nameOnly ? compact.height : Math.min(18, Math.max(11, compact.height * 0.32))) : 0
 
-            text: root.currentDesktopIcon.kind === "icon" ? ""
-                  : root.currentDesktopIcon.kind === "emoji"
-                    ? root.currentDesktopIcon.value : root.desktopName
-            textFormat: Text.PlainText
-            color: root.titleTextColor
-            opacity: 1
-            font.bold: true
-            font.pixelSize: root.currentDesktopIcon.kind === "emoji"
-                            ? (compact.nameOnly ? 34 : 22)
-                            : (compact.nameOnly ? 24 : 14)
-            minimumPixelSize: 8
-            fontSizeMode: Text.Fit
-            wrapMode: Text.NoWrap
-            elide: Text.ElideRight
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-        }
+            // Keep the icon in its own leading slot so the desktop name remains
+            // visible and can use the remaining width in both panel modes.
+            RowLayout {
+                anchors.fill: parent
+                spacing: desktopIconSlot.visible ? 5 : 0
 
-        PlasmaCore.IconItem {
-            visible: compact.showDesktopTitle && root.currentDesktopIcon.kind === "icon"
-            anchors.centerIn: desktopTitle
-            width: Math.min(compact.width - 6, compact.nameOnly ? compact.height - 6 : desktopTitle.height - 2)
-            height: width
-            source: root.currentDesktopIcon.kind === "icon" ? root.currentDesktopIcon.value : ""
+                Item {
+                    id: desktopIconSlot
+                    visible: root.currentDesktopIcon.kind === "emoji"
+                             || root.currentDesktopIcon.kind === "icon"
+                    Layout.preferredWidth: visible
+                                           ? Math.max(8, Math.min(compact.nameOnly ? 24 : 14,
+                                                                  desktopTitle.height - 4))
+                                           : 0
+                    Layout.fillHeight: true
+
+                    Text {
+                        visible: root.currentDesktopIcon.kind === "emoji"
+                        anchors.fill: parent
+                        text: root.currentDesktopIcon.kind === "emoji"
+                              ? root.currentDesktopIcon.value : ""
+                        textFormat: Text.PlainText
+                        color: root.titleTextColor
+                        font.pixelSize: Math.max(8, Math.min(compact.nameOnly ? 24 : 14,
+                                                            parent.height - 4))
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+
+                    PlasmaCore.IconItem {
+                        visible: root.currentDesktopIcon.kind === "icon"
+                        anchors.centerIn: parent
+                        width: Math.max(8, Math.min(compact.nameOnly ? 24 : 14,
+                                                   parent.height - 4))
+                        height: width
+                        source: root.currentDesktopIcon.kind === "icon"
+                                ? root.currentDesktopIcon.value : ""
+                    }
+                }
+
+                Text {
+                    id: desktopTitleText
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+
+                    text: root.desktopName
+                    textFormat: Text.PlainText
+                    color: root.titleTextColor
+                    opacity: 1
+                    font.bold: true
+                    font.pixelSize: compact.nameOnly ? 24 : 14
+                    minimumPixelSize: 8
+                    fontSizeMode: Text.Fit
+                    wrapMode: Text.NoWrap
+                    elide: Text.ElideRight
+                    horizontalAlignment: desktopIconSlot.visible
+                                         ? Text.AlignLeft : Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+            }
         }
 
         // Click the title to open a properly anchored KDE editor.
