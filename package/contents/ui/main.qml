@@ -36,7 +36,7 @@ Item {
     readonly property var currentDesktopColors: desktopColors[desktopKey] || ({})
 
     // Icons are persistent appearance choices keyed to the same stable KWin IDs.
-    // With no icon selected, the panel continues showing the desktop name.
+    // A selected icon supplements (never replaces) the desktop name in the panel.
     readonly property var desktopIcons: {
         try {
             var parsed = JSON.parse(plasmoid.configuration.desktopIcons || "{}")
