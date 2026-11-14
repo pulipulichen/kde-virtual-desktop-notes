@@ -43,6 +43,20 @@ class DesktopIconPickerTests(unittest.TestCase):
         self.assertIn("function saveCurrentDesktopIcon(kind, value)", MAIN)
         self.assertIn("function submitDesktopRename(rawName, forceUpdate)", MAIN)
 
+    def test_panel_displays_icon_left_of_desktop_name(self):
+        title_section = MAIN.split("id: desktopTitle", 1)[1].split(
+            "// Click the title", 1
+        )[0]
+        self.assertIn("RowLayout {", title_section)
+        self.assertLess(title_section.index("id: desktopIconSlot"),
+                        title_section.index("id: desktopTitleText"))
+        self.assertIn("text: root.desktopName", title_section)
+        self.assertIn("horizontalAlignment: desktopIconSlot.visible", title_section)
+        self.assertIn("Text.AlignLeft : Text.AlignHCenter", title_section)
+        self.assertIn("Layout.preferredWidth: visible", title_section)
+        self.assertIn('visible: root.currentDesktopIcon.kind === "emoji"', title_section)
+        self.assertIn('visible: root.currentDesktopIcon.kind === "icon"', title_section)
+
     def test_per_desktop_persistent_icons_and_plain_text_fallback(self):
         self.assertIn('name="desktopIcons" type="String"', XML)
         self.assertIn('JSON.parse(plasmoid.configuration.desktopIcons || "{}")', MAIN)
@@ -50,7 +64,8 @@ class DesktopIconPickerTests(unittest.TestCase):
         self.assertIn("map[desktopKey] = {kind: kind, value: String(value)}", MAIN)
         self.assertIn("delete map[desktopKey]", MAIN)
         self.assertIn("plasmoid.configuration.desktopIcons = JSON.stringify(map)", MAIN)
-        self.assertIn("? root.currentDesktopIcon.value : root.desktopName", MAIN)
+        self.assertIn("text: root.desktopName", MAIN)
+        self.assertIn("root.currentDesktopIcon.value", MAIN)
         self.assertIn("root.currentDesktopIcon.kind === \"icon\"", MAIN)
         # Notes are intentionally session-only, even when icon settings persist.
         self.assertNotIn('name="notes"', XML)
