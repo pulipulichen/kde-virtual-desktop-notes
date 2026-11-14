@@ -41,7 +41,7 @@ class DesktopIconPickerTests(unittest.TestCase):
         self.assertIn("onClicked: iconDialog.openIcons(", MAIN)
         self.assertIn("onClicked: colorDialog.openColors(", MAIN)
         self.assertIn("function saveCurrentDesktopIcon(kind, value)", MAIN)
-        self.assertIn("function submitDesktopRename(rawName, forceUpdate)", MAIN)
+        self.assertIn("function submitDesktopRename(rawName, forceUpdate, noteDraft)", MAIN)
 
     def test_panel_displays_icon_left_of_desktop_name(self):
         title_section = MAIN.split("id: desktopTitle", 1)[1].split(
