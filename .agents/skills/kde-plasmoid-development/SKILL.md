@@ -61,8 +61,9 @@ Use the Plasma 6 widget-development reference for ideas, **not** as drop-in code
   Apply/Cancel/Escape, and a no-icon/text-only choice. Save the chosen
   {kind, value} per KDE desktop ID in KConfig `desktopIcons`; do not
   rename KWin or store temporary notes when updating this preference.
-  In the panel's title area, show the selected emoji or KDE icon instead
-  of the desktop name. Without a selection, show the original desktop name.
+  In the panel's title area, show the selected emoji or KDE icon on the left
+  and keep the original desktop name visible to its right. Without a selection,
+  show the original desktop name in the existing name-only layout.
   Preserve the click-to-rename interaction in either mode.
 - Inspect light/dark Breeze styles, panel text, full popup, text caret,
   button/field states, focus/hover, custom colors, and scaling.
